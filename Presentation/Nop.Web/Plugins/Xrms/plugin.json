@@ -1,0 +1,11 @@
+﻿{
+  "Group": "Xrms",
+  "FriendlyName": "Restaurant Management System",
+  "SystemName": "Xrms",
+  "Version": "1.00",
+  "SupportedVersions": [ "4.10" ],
+  "Author": "Hung Xuan",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Xrms.dll",
+  "Description": "This plugin extend some features of NopCommerce to make it become smart restaurant management system."
+}
