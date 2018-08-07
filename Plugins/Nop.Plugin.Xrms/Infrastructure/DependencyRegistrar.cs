@@ -26,6 +26,7 @@ namespace Nop.Plugin.Xrms.Infrastructure
             builder.RegisterType<MaterialGroupService>().As<IMaterialGroupService>().InstancePerLifetimeScope();
             builder.RegisterType<MaterialService>().As<IMaterialService>().InstancePerLifetimeScope();
             builder.RegisterType<SupplierService>().As<ISupplierService>().InstancePerLifetimeScope();
+            builder.RegisterType<TableService>().As<ITableService>().InstancePerLifetimeScope();
 
             //data context
             builder.RegisterPluginDataContext<XrmsObjectContext>("CONTEXT_NAME");

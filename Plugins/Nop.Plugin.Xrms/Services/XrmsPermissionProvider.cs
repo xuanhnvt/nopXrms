@@ -15,6 +15,7 @@ namespace Nop.Plugin.Xrms.Services
         public static readonly PermissionRecord ManageSuppliers = new PermissionRecord { Name = "Admin area. XRMS Manage Suppliers", SystemName = "XrmsManageSuppliers", Category = "Catalog" };
         public static readonly PermissionRecord ManageMaterials = new PermissionRecord { Name = "Admin area. XRMS Manage Materials", SystemName = "XrmsManageMaterials", Category = "Catalog" };
         public static readonly PermissionRecord ManageMaterialGroups = new PermissionRecord { Name = "Admin area. XRMS Manage Material Groups", SystemName = "XrmsManageMaterialGroups", Category = "Catalog" };
+        public static readonly PermissionRecord ManageTables = new PermissionRecord { Name = "Admin area. XRMS Manage Tables", SystemName = "XrmsManageTables", Category = "Catalog" };
 
         /// <summary>
         /// Get permissions
@@ -26,7 +27,8 @@ namespace Nop.Plugin.Xrms.Services
             {
                 ManageSuppliers,
                 ManageMaterials,
-                ManageMaterialGroups
+                ManageMaterialGroups,
+                ManageTables
             };
         }
 
@@ -45,7 +47,8 @@ namespace Nop.Plugin.Xrms.Services
                     {
                         ManageSuppliers,
                         ManageMaterials,
-                        ManageMaterialGroups
+                        ManageMaterialGroups,
+                        ManageTables
                     }
                 }
             };

@@ -4,6 +4,7 @@ using Nop.Plugin.Xrms.Areas.Admin.Models.MaterialGroups;
 using Nop.Core.Infrastructure.Mapper;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Materials;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Suppliers;
+using Nop.Plugin.Xrms.Areas.Admin.Models.Tables;
 
 namespace Nop.Plugin.Xrms.Areas.Admin.Models
 {
@@ -199,5 +200,72 @@ namespace Nop.Plugin.Xrms.Areas.Admin.Models
         }*/
 
         #endregion // Supplier
+
+        #region Table
+
+        // from entity to view model
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public static TableListItemViewModel ToListItemViewModel(this Table entity)
+        {
+            return entity.MapTo<Table, TableListItemViewModel>();
+        }
+
+        public static TableDetailsPageViewModel ToDetailsViewModel(this Table entity)
+        {
+            return entity.MapTo<Table, TableDetailsPageViewModel>();
+        }
+
+        public static TableDetailsPageViewModel ToDetailsViewModel(this Table entity, TableDetailsPageViewModel viewModel)
+        {
+            return entity.MapTo(viewModel);
+        }
+
+        // from action model to entity
+        public static Table ToEntity(this CreateTableModel model)
+        {
+            return model.MapTo<CreateTableModel, Table>();
+        }
+
+        public static Table ToEntity(this CreateTableModel model, Table entity)
+        {
+            return model.MapTo(entity);
+        }
+
+        public static Table ToEntity(this UpdateTableModel model)
+        {
+            return model.MapTo<UpdateTableModel, Table>();
+        }
+
+        public static Table ToEntity(this UpdateTableModel model, Table entity)
+        {
+            return model.MapTo(entity);
+        }
+
+        // from action model to view model
+        public static TableDetailsPageViewModel ToDetailsViewModel(this CreateTableModel model)
+        {
+            return model.MapTo<CreateTableModel, TableDetailsPageViewModel>();
+        }
+
+        public static TableDetailsPageViewModel ToDetailsViewModel(this CreateTableModel model, TableDetailsPageViewModel viewModel)
+        {
+            return model.MapTo(viewModel);
+        }
+
+        public static TableDetailsPageViewModel ToDetailsViewModel(this UpdateTableModel model)
+        {
+            return model.MapTo<UpdateTableModel, TableDetailsPageViewModel>();
+        }
+
+        public static TableDetailsPageViewModel ToDetailsViewModel(this UpdateTableModel model, TableDetailsPageViewModel viewModel)
+        {
+            return model.MapTo(viewModel);
+        }
+
+        #endregion // Table
     }
 }

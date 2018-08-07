@@ -187,6 +187,34 @@ namespace Nop.Plugin.Xrms
 
             #endregion Product Extensions
 
+            #region Tables
+
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Notifications.Created", "The new table has been created successfully.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Notifications.Updated", "The table has been updated successfully.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Notifications.Deleted", "The table has been deleted successfully.");
+
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.ActivityLog.AddNewTable", "Added a new table ('{0}')");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.ActivityLog.EditTable", "Edited a table ('{0}')");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.ActivityLog.DeleteTable", "Deleted a table ('{0}')");
+
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.List.Title", "Tables");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.List.Hints.ImportFromExcelTip", "Imported tables are distinguished by ID. If the ID already exists, then its corresponding table will be updated. You should not specify ID (leave 0) for new table.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.List.Search.TableName", "Table name");
+
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Details.Create.Title", "Create a new table");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Details.Edit.Title", "Edit table details");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Details.Buttons.BackToList", "back to table list");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Details.Tabs.Info", "Table info");
+
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Fields.Name", "Name");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Fields.Name.Required", "Please provide a name.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Fields.Description", "Description");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Fields.State", "State");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Fields.Picture", "Picture");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Tables.Fields.DisplayOrder", "Display Order");
+
+            #endregion Tables
+
             // create default data
             this._materialGroupService.InsertMaterialGroup(new MaterialGroup()
             {
@@ -355,6 +383,34 @@ namespace Nop.Plugin.Xrms
 
             #endregion Product Extensions
 
+            #region Tables
+
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Notifications.Created");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Notifications.Updated");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Notifications.Deleted");
+
+            _localizationService.DeletePluginLocaleResource("Xrms.ActivityLog.AddNewTable");
+            _localizationService.DeletePluginLocaleResource("Xrms.ActivityLog.EditTable");
+            _localizationService.DeletePluginLocaleResource("Xrms.ActivityLog.DeleteTable");
+
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.List.Title");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.List.Hints.ImportFromExcelTip");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.List.Search.TableName");
+
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Details.Create.Title");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Details.Edit.Title");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Details.Buttons.BackToList");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Details.Tabs.Info");
+
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Fields.Name");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Fields.Name.Required");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Fields.Description");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Fields.State");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Fields.Picture");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Catalog.Tables.Fields.DisplayOrder");
+
+            #endregion Tables
+
             base.Uninstall();
         }
 
@@ -399,6 +455,17 @@ namespace Nop.Plugin.Xrms
                 SystemName = "Suppliers",
                 Title = "Suppliers",
                 ControllerName = "Supplier",
+                ActionName = "List",
+                IconClass = "fa-dot-circle-o",
+                Visible = true,
+                RouteValues = new RouteValueDictionary() { { "area", AreaNames.Admin } },
+            });
+
+            pluginNode.ChildNodes.Add(new SiteMapNode()
+            {
+                SystemName = "Tables",
+                Title = "Tables",
+                ControllerName = "Table",
                 ActionName = "List",
                 IconClass = "fa-dot-circle-o",
                 Visible = true,

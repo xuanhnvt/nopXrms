@@ -9,6 +9,7 @@ using Nop.Plugin.Xrms.Domain;
 using Nop.Plugin.Xrms.Areas.Admin.Models.MaterialGroups;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Materials;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Suppliers;
+using Nop.Plugin.Xrms.Areas.Admin.Models.Tables;
 
 namespace Nop.Plugin.Xrms.Infrastructure
 {
@@ -63,6 +64,21 @@ namespace Nop.Plugin.Xrms.Infrastructure
             //CreateMap<SupplierModel, SupplierDetailsPageViewModel>();
 
             #endregion // Supplier
+
+            #region Table
+            // from entity to view model
+            CreateMap<Table, TableListItemViewModel>();
+            CreateMap<Table, TableDetailsPageViewModel>();
+
+            // from action model to entity
+            CreateMap<CreateTableModel, Table>();
+            CreateMap<UpdateTableModel, Table>();
+
+            // from action model to view model
+            CreateMap<CreateTableModel, TableDetailsPageViewModel>();
+            CreateMap<UpdateTableModel, TableDetailsPageViewModel>();
+
+            #endregion // Table
 
         }
 

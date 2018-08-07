@@ -18,6 +18,11 @@
   </Target>
 
   <ItemGroup>
+    <None Remove="Areas\Admin\Views\Table\Create.cshtml" />
+    <None Remove="Areas\Admin\Views\Table\Edit.cshtml" />
+    <None Remove="Areas\Admin\Views\Table\List.cshtml" />
+    <None Remove="Areas\Admin\Views\Table\_CreateOrUpdate.cshtml" />
+    <None Remove="Areas\Admin\Views\Table\_CreateOrUpdate.Info.cshtml" />
     <None Remove="Areas\Admin\Views\MaterialGroup\AddMaterialsPopup.cshtml" />
     <None Remove="Areas\Admin\Views\MaterialGroup\Create.cshtml" />
     <None Remove="Areas\Admin\Views\MaterialGroup\Edit.cshtml" />
@@ -38,6 +43,21 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Areas\Admin\Views\Table\Create.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Areas\Admin\Views\Table\Edit.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Areas\Admin\Views\Table\List.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Areas\Admin\Views\Table\_CreateOrUpdate.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Areas\Admin\Views\Table\_CreateOrUpdate.Info.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Areas\Admin\Views\MaterialGroup\AddMaterialsPopup.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
