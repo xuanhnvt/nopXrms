@@ -29,6 +29,12 @@ namespace Nop.Plugin.Xrms.Data
             modelBuilder.ApplyConfiguration(new MaterialQuantityHistoryMap());
             modelBuilder.ApplyConfiguration(new SupplierMap());
 
+            modelBuilder.ApplyConfiguration(new TableMap());
+            modelBuilder.ApplyConfiguration(new CurrentOrderMap());
+            modelBuilder.ApplyConfiguration(new CurrentOrderItemMap());
+            modelBuilder.ApplyConfiguration(new OrderItemNoteMap());
+            modelBuilder.ApplyConfiguration(new OrderTableMappingMap());
+
             base.OnModelCreating(modelBuilder);
         }
 
@@ -88,9 +94,23 @@ namespace Nop.Plugin.Xrms.Data
 
             tableName = this.GetTableName<Supplier>();
             this.DropPluginTable(tableName);
+
+            tableName = this.GetTableName<OrderTableMapping>();
+            this.DropPluginTable(tableName);
+
+            tableName = this.GetTableName<OrderItemNote>();
+            this.DropPluginTable(tableName);
+
+            tableName = this.GetTableName<CurrentOrderItem>();
+            this.DropPluginTable(tableName);
+
+            tableName = this.GetTableName<CurrentOrder>();
+            this.DropPluginTable(tableName);
+
+            tableName = this.GetTableName<Table>();
+            this.DropPluginTable(tableName);
+
         }
-
-
 
         /// <summary>
         /// Creates a LINQ query for the query type based on a raw SQL query

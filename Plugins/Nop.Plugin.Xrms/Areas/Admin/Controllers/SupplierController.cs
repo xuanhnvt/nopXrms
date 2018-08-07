@@ -134,22 +134,25 @@ namespace Nop.Plugin.Xrms.Controllers
 
         #endregion
 
-        /*
+
         
-        #region Create / Edit / Delete
+        
 
         public virtual IActionResult Create()
         {
             if (!_permissionService.Authorize(XrmsPermissionProvider.ManageSuppliers))
                 return AccessDeniedView();
 
-            var model = new SupplierDetailsPageViewModel();
+            string requestPath = HttpContext.Request.Path.Value;
+            string requestPathBase = HttpContext.Request.PathBase.Value;
+            //var model = new SupplierDetailsPageViewModel();
             // set default values
-            model.DisplayOrder = 1;
+            //model.DisplayOrder = 1;
 
-            return View("~/Plugins/Xrms/Areas/Admin/Views/Supplier/Create.cshtml", model);
+            return Content("Request.PathBase = " + requestPathBase + "\nRequest.Path = " + requestPath);
         }
-
+        /*
+        #region Create / Edit / Delete
         [HttpPost, ParameterBasedOnFormName("save-continue", "continueEditing")]
         public virtual IActionResult Create(SupplierModel model, bool continueEditing)
         {

@@ -35,30 +35,36 @@ namespace Nop.Plugin.Xrms.Infrastructure
             .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME"))
             .InstancePerLifetimeScope();*/
 
-            builder.RegisterType<EfRepository<MaterialGroup>>()
-            .As<IRepository<MaterialGroup>>()
-            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME"))
-            .InstancePerLifetimeScope();
+            builder.RegisterType<EfRepository<MaterialGroup>>().As<IRepository<MaterialGroup>>()
+            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME")).InstancePerLifetimeScope();
 
-            builder.RegisterType<EfRepository<Material>>()
-            .As<IRepository<Material>>()
-            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME"))
-            .InstancePerLifetimeScope();
+            builder.RegisterType<EfRepository<Material>>().As<IRepository<Material>>()
+            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME")).InstancePerLifetimeScope();
 
-            builder.RegisterType<EfRepository<ProductRecipe>>()
-            .As<IRepository<ProductRecipe>>()
-            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME"))
-            .InstancePerLifetimeScope();
+            builder.RegisterType<EfRepository<ProductRecipe>>().As<IRepository<ProductRecipe>>()
+            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME")).InstancePerLifetimeScope();
 
-            builder.RegisterType<EfRepository<MaterialQuantityHistory>>()
-            .As<IRepository<MaterialQuantityHistory>>()
-            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME"))
-            .InstancePerLifetimeScope();
+            builder.RegisterType<EfRepository<MaterialQuantityHistory>>().As<IRepository<MaterialQuantityHistory>>()
+            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME")).InstancePerLifetimeScope();
 
-            builder.RegisterType<EfRepository<Supplier>>()
-            .As<IRepository<Supplier>>()
-            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME"))
-            .InstancePerLifetimeScope();
+            builder.RegisterType<EfRepository<Supplier>>().As<IRepository<Supplier>>()
+            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME")).InstancePerLifetimeScope();
+
+            builder.RegisterType<EfRepository<Table>>().As<IRepository<Table>>()
+            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME")).InstancePerLifetimeScope();
+
+            builder.RegisterType<EfRepository<CurrentOrder>>().As<IRepository<CurrentOrder>>()
+            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME")).InstancePerLifetimeScope();
+
+            builder.RegisterType<EfRepository<CurrentOrderItem>>().As<IRepository<CurrentOrderItem>>()
+            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME")).InstancePerLifetimeScope();
+
+            builder.RegisterType<EfRepository<OrderItemNote>>().As<IRepository<OrderItemNote>>()
+            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME")).InstancePerLifetimeScope();
+
+            builder.RegisterType<EfRepository<OrderTableMapping>>().As<IRepository<OrderTableMapping>>()
+            .WithParameter(ResolvedParameter.ForNamed<IDbContext>("CONTEXT_NAME")).InstancePerLifetimeScope();
+
         }
         public int Order
         {
