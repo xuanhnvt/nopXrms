@@ -6,11 +6,31 @@ using Nop.Core.Domain.Localization;
 namespace Nop.Plugin.Xrms.Domain
 {
     /// <summary>
+    /// Represents the real time table state enumeration
+    /// </summary>
+    public enum TableState
+    {
+        Free = 0,
+        Serving = 10,
+        Billed = 20
+    }
+
+    /// <summary>
     /// Represents a restaurant table
     /// </summary>
     public partial class Table : BaseEntity, ILocalizedEntity
     {
         private ICollection<OrderTableMapping> _orderTableMappings;
+
+        /// <summary>
+        /// Gets or sets the aggregate id
+        /// </summary>
+        public Guid AggregateId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the version
+        /// </summary>
+        public int Version { get; set; }
 
         /// <summary>
         /// Gets or sets the name
@@ -38,9 +58,9 @@ namespace Nop.Plugin.Xrms.Domain
         public int DisplayOrder { get; set; }
 
         /// <summary>
-        /// Gets or sets the display order
+        /// Gets or sets the state id
         /// </summary>
-        public int State { get; set; }
+        public int StateId { get; set; }
 
         /// <summary>
         /// Gets or sets the date and time of instance creation
@@ -64,6 +84,15 @@ namespace Nop.Plugin.Xrms.Domain
         {
             get { return _orderTableMappings ?? (_orderTableMappings = new List<OrderTableMapping>()); }
             protected set { _orderTableMappings = value; }
+        }
+
+        /// <summary>
+        /// Get or set table state
+        /// </summary>
+        public TableState State
+        {
+            get => (TableState)StateId;
+            set => StateId = (int)value;
         }
     }
 }

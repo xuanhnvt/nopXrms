@@ -31,6 +31,8 @@ namespace Nop.Plugin.Xrms.Data.Mapping
         {
             builder.ToTable("XrmsCurrentOrder");
             builder.HasKey(order => order.Id);
+
+            builder.Ignore(order => order.State);
             base.Configure(builder);
         }
 

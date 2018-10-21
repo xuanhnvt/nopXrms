@@ -1,0 +1,23 @@
+﻿@model CurrentOrderDetailsPageViewModel
+@{
+    Layout = "_AdminLayout";
+
+    //page title
+    ViewBag.Title = T("Xrms.Admin.Cashier.Orders.Details.Create.Title").Text;
+    //active menu item (system name)
+    Html.SetActiveMenuItemSystemName("CashierOrders");
+}
+
+<form asp-controller="CashierOrder" asp-action="Create" method="post" id="cashier-order-form">
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Xrms.Admin.Cashier.Orders.Details.Create.Title")
+            <small>
+                <i class="fa fa-arrow-circle-left"></i>
+                <a asp-action="List">@T("Xrms.Admin.Cashier.Orders.Details.Buttons.BackToList")</a>
+            </small>
+        </h1>
+    </div>
+    @await Html.PartialAsync("~/Plugins/Xrms/Areas/Admin/Views/CashierOrder/_CreateOrUpdate.cshtml", Model)
+</form>
+

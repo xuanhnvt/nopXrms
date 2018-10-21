@@ -24,6 +24,11 @@ using Nop.Web.Framework.Mvc.Filters;
 using Nop.Plugin.Xrms.Areas.Admin.Models;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Tables;
 using Nop.Plugin.Xrms.Services;
+using CQRSlite.Commands;
+using System.Threading.Tasks;
+using System.Threading;
+using Nop.Plugin.Xrms.Cqrs.WriteModel.Commands.Table;
+using Nop.Plugin.Xrms.Cqrs;
 
 namespace Nop.Plugin.Xrms.Controllers
 {
@@ -31,6 +36,8 @@ namespace Nop.Plugin.Xrms.Controllers
     {
         #region Fields
 
+        private readonly ILogger _log;
+        private readonly ICommandSender _commandSender;
         private readonly ICategoryService _categoryService;
         private readonly ICustomerActivityService _customerActivityService;
         private readonly IExportManager _exportManager;
@@ -49,7 +56,8 @@ namespace Nop.Plugin.Xrms.Controllers
 
         #region Ctor
 
-        public TableController(ITableService materialGroupService,
+        public TableController(ILogger log, ICommandSender commandSender,
+            ITableService materialGroupService,
             IMaterialService materialService,
             ICategoryService categoryService,
             IManufacturerService manufacturerService,
@@ -63,6 +71,8 @@ namespace Nop.Plugin.Xrms.Controllers
             IImportManager importManager,
             IStaticCacheManager cacheManager)
         {
+            this._log = log;
+            this._commandSender = commandSender;
             this._materialGroupService = materialGroupService;
             this._materialService = materialService;
 
@@ -139,6 +149,57 @@ namespace Nop.Plugin.Xrms.Controllers
         }
 
         [HttpPost, ParameterBasedOnFormName("save-continue", "continueEditing")]
+        public virtual IActionResult Create(CreateTableModel model, bool continueEditing, CancellationToken cancellationToken)
+        {
+            if (!_permissionService.Authorize(XrmsPermissionProvider.ManageTables))
+                return AccessDeniedView();
+
+            if (ModelState.IsValid)
+            {
+                /*var group = model.ToEntity();
+                group.CreatedOnUtc = DateTime.UtcNow;
+                group.UpdatedOnUtc = DateTime.UtcNow;
+                _materialGroupService.InsertTable(group);*//*_context.Add(table);
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Index");*/
+                Guid guid = CompGuid.NewGuid();
+                _commandSender.Send(new CreateCmd(guid, "", model.Name, 0, Guid.Empty, model.Description), cancellationToken);
+                //return RedirectToAction("Index");
+
+
+
+                var table = this._materialGroupService.GetTableByAggregateId(guid);
+
+                //activity log
+                _customerActivityService.InsertActivity("AddNewTable", _localizationService.GetResource("Xrms.ActivityLog.AddNewTable"), table);
+
+                SuccessNotification(_localizationService.GetResource("Xrms.Admin.Catalog.Tables.Notifications.Created"));
+
+                if (continueEditing)
+                {
+                    //selected tab
+                    SaveSelectedTabName();
+                    return RedirectToAction("Edit", new { id = table.Id });
+                }
+                return RedirectToAction("List");
+            }
+
+            //If we got this far, something failed, redisplay form
+            var viewModel = new TableDetailsPageViewModel();
+            model.ToDetailsViewModel(viewModel);
+            //viewModel.TableInfo = model;
+
+            return View("~/Plugins/Xrms/Areas/Admin/Views/Table/Create.cshtml", viewModel);
+        }
+
+        /*[HttpPost]
+        public async Task<ActionResult> Add(string name, CancellationToken cancellationToken)
+        {
+            await _commandSender.Send(new CreateInventoryItem(Guid.NewGuid(), name), cancellationToken);
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost, ParameterBasedOnFormName("save-continue", "continueEditing")]
         public virtual IActionResult Create(CreateTableModel model, bool continueEditing)
         {
             if (!_permissionService.Authorize(XrmsPermissionProvider.ManageTables))
@@ -173,7 +234,7 @@ namespace Nop.Plugin.Xrms.Controllers
 
             return View("~/Plugins/Xrms/Areas/Admin/Views/Table/Create.cshtml", viewModel);
         }
-
+        */
         public virtual IActionResult Edit(int id)
         {
             if (!_permissionService.Authorize(XrmsPermissionProvider.ManageTables))
@@ -190,7 +251,7 @@ namespace Nop.Plugin.Xrms.Controllers
         }
 
         [HttpPost, ParameterBasedOnFormName("save-continue", "continueEditing")]
-        public virtual IActionResult Edit(int id, UpdateTableModel model, bool continueEditing)
+        public virtual IActionResult Edit(int id, UpdateTableModel model, bool continueEditing, CancellationToken cancellationToken)
         {
             if (!_permissionService.Authorize(XrmsPermissionProvider.ManageTables))
                 return AccessDeniedView();
@@ -202,7 +263,7 @@ namespace Nop.Plugin.Xrms.Controllers
 
             if (ModelState.IsValid)
             {
-                var prevPictureId = materialGroup.PictureId;
+                /*var prevPictureId = materialGroup.PictureId;
                 materialGroup = model.ToEntity(materialGroup);
                 materialGroup.UpdatedOnUtc = DateTime.UtcNow;
                 _materialGroupService.UpdateTable(materialGroup);
@@ -213,7 +274,11 @@ namespace Nop.Plugin.Xrms.Controllers
                     var prevPicture = _pictureService.GetPictureById(prevPictureId);
                     if (prevPicture != null)
                         _pictureService.DeletePicture(prevPicture);
-                }
+                }*/
+
+                this._log.Information(String.Format("Table {0} => AggregateId = {1}, Version = {2}", model.Name, model.AggregateId, model.Version));
+                _commandSender.Send(new EditCmd(model.AggregateId, model.Version, "", model.Name, 0, Guid.Empty, model.Description), cancellationToken);
+
 
                 //activity log
                 _customerActivityService.InsertActivity("EditTable", _localizationService.GetResource("Xrms.ActivityLog.EditTable"), materialGroup);

@@ -1,0 +1,11 @@
+﻿{
+  "Group": "Widgets",
+  "FriendlyName":"LiveAnnouncement",
+  "SystemName":"LiveAnnouncement",
+  "Version":"1.0",
+  "SupportedVersions":["4.10"],
+  "Author":"Sina",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Widget.LiveAnnouncement.dll",
+  "Description": "This plugin allows admins to broadcust any update"
+}

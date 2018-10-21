@@ -34,6 +34,7 @@ namespace Nop.Plugin.Xrms.Data
             modelBuilder.ApplyConfiguration(new CurrentOrderItemMap());
             modelBuilder.ApplyConfiguration(new OrderItemNoteMap());
             modelBuilder.ApplyConfiguration(new OrderTableMappingMap());
+            modelBuilder.ApplyConfiguration(new CqrsEventMap());
 
             base.OnModelCreating(modelBuilder);
         }
@@ -108,6 +109,9 @@ namespace Nop.Plugin.Xrms.Data
             this.DropPluginTable(tableName);
 
             tableName = this.GetTableName<Table>();
+            this.DropPluginTable(tableName);
+
+            tableName = this.GetTableName<CqrsEvent>();
             this.DropPluginTable(tableName);
 
         }

@@ -1,0 +1,75 @@
+﻿@model Nop.Plugin.Widget.LiveAnnouncement.Models.AnnouncementModel
+@using Nop.Core.Infrastructure
+@using Nop.Web.Framework
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<Nop.Core.Domain.Common.AdminAreaSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<Nop.Core.Domain.Common.AdminAreaSettings>().GridPageSizes;
+
+    Layout = "_AdminLayout";
+    //page title
+    ViewBag.Title = T("Admin.Plugins.HomePageProduct").Text;
+}
+
+@using (Html.BeginForm())
+{
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        Create Announcement
+    </h1>
+    <div class="pull-right">
+        <button type="submit" class="btn bg-purple">
+            <i class="fa fa-file-pdf-o"></i>
+            Create Announcement
+        </button>
+        <a href="/Admin/LiveAnnouncement/AnnouncementList" class="btn bg-olive">LiveAnnouncement</a>
+    </div>
+</div>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            <div class="panel panel-default panel-search">
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="form-group">
+                            <div class="col-md-3" style="text-align:center;">
+                                @Html.LabelFor(model => model.Name)
+                            </div>
+                            <div class="col-md-8">
+                                @Html.EditorFor(model => model.Name)
+                            </div>
+                            <div class="col-md-1">
+                                &nbsp;
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3" style="text-align:center;">
+                                @Html.LabelFor(model => model.Body)
+                            </div>
+                            <div class="col-md-8">
+                                <nop-editor asp-for="@Model.Body" asp-template="RichEditor" />
+                            </div>
+                            <div class="col-md-1">
+                                &nbsp;
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3" style="text-align:center;">
+                                @Html.LabelFor(model => model.IsActive)
+                            </div>
+                            <div class="col-md-8">
+                                @Html.EditorFor(model => model.IsActive)
+                            </div>
+                            <div class="col-md-1">
+                                &nbsp;
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                }
+
+

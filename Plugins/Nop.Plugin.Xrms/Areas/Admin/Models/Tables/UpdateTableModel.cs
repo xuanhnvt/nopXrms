@@ -16,6 +16,10 @@ namespace Nop.Plugin.Xrms.Areas.Admin.Models.Tables
 
         }
 
+        public Guid AggregateId { get; set; }
+
+        public int Version { get; set; }
+
         [NopResourceDisplayName("Xrms.Admin.Catalog.Tables.Fields.Name")]
         public string Name { get; set; }
 

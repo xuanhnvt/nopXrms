@@ -7,12 +7,33 @@ using Nop.Core.Domain.Orders;
 namespace Nop.Plugin.Xrms.Domain
 {
     /// <summary>
-    /// Represents a material group
+    /// Represents the current order status enumeration
+    /// </summary>
+    public enum CurrentOrderState
+    {
+        Created = 0,
+        Serving = 10,
+        Billed = 20,
+        Completed = 30,
+        Cancelled = 100
+    }
+
+    /// <summary>
+    /// Represents a current order
     /// </summary>
     public partial class CurrentOrder : BaseEntity, ILocalizedEntity
     {
-
         private ICollection<CurrentOrderItem> _currentOrderItems;
+
+        /// <summary>
+        /// Gets or sets the aggregate id
+        /// </summary>
+        public Guid AggregateId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the version
+        /// </summary>
+        public int Version { get; set; }
 
         /// <summary>
         /// Gets or sets the order id
@@ -32,7 +53,7 @@ namespace Nop.Plugin.Xrms.Domain
         /// <summary>
         /// Gets or sets the order state
         /// </summary>
-        public int State { get; set; }
+        public int StateId { get; set; }
 
         /// <summary>
         /// Gets or sets the print count
@@ -40,24 +61,14 @@ namespace Nop.Plugin.Xrms.Domain
         public int PrintCount { get; set; }
 
         /// <summary>
-        /// Gets or sets the lock state
-        /// </summary>
-        public bool IsLocked { get; set; }
-
-        /// <summary>
         /// Gets or sets the date and time of billing order
         /// </summary>
-        public DateTime BilledOnUtc { get; set; }
+        public DateTime? BilledOnUtc { get; set; }
 
         /// <summary>
-        /// Gets or sets the date and time of checking out order
+        /// Gets or sets the date and time of completing order
         /// </summary>
-        public DateTime CheckedOutOnUtc { get; set; }
-
-        /// <summary>
-        /// Gets or sets the display order
-        /// </summary>
-        public int DisplayOrder { get; set; }
+        public DateTime? CompletedOnUtc { get; set; }
 
         /// <summary>
         /// Gets or sets the date and time of instance creation
@@ -70,7 +81,7 @@ namespace Nop.Plugin.Xrms.Domain
         public DateTime UpdatedOnUtc { get; set; }
 
         /// <summary>
-        /// Gets or sets the restaurant table
+        /// Gets or sets the table
         /// </summary>
         public virtual Table Table { get; set; }
 
@@ -86,6 +97,15 @@ namespace Nop.Plugin.Xrms.Domain
         {
             get { return _currentOrderItems ?? (_currentOrderItems = new List<CurrentOrderItem>()); }
             protected set { _currentOrderItems = value; }
+        }
+
+        /// <summary>
+        /// Get or set order state
+        /// </summary>
+        public CurrentOrderState State
+        {
+            get => (CurrentOrderState) StateId;
+            set => StateId = (int) value;
         }
     }
 }

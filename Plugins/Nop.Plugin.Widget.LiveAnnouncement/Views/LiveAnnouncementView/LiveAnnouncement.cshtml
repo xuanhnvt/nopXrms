@@ -1,0 +1,20 @@
+﻿@using Nop.Core;
+@using Nop.Core.Domain.Seo;
+@using Nop.Core.Infrastructure;
+@using Nop.Web.Framework;
+@using Nop.Web.Framework.UI;
+@using Nop.Services.Configuration;
+@{
+
+
+    ISettingService _settingContext = EngineContext.Current.Resolve<ISettingService>();
+    IStoreContext _storeContext = EngineContext.Current.Resolve<IStoreContext>();
+
+    Html.AddScriptParts("~/Plugins/Widget.LiveAnnouncement/Scripts/signalr.js");
+    Html.AddScriptParts("~/Plugins/Widget.LiveAnnouncement/Scripts/LiveAnnouncement.js");
+    Html.AddCssFileParts("~/Plugins/Widget.LiveAnnouncement/Content/toastr.min.css");
+    Html.AddScriptParts("~/Plugins/Widget.LiveAnnouncement/Scripts/toastr.js");
+}
+
+<div class="announcementPage">
+</div>

@@ -5,6 +5,7 @@ using Nop.Core.Infrastructure.Mapper;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Materials;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Suppliers;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Tables;
+using Nop.Plugin.Xrms.Areas.Admin.Models.CurrentOrders;
 
 namespace Nop.Plugin.Xrms.Areas.Admin.Models
 {
@@ -267,5 +268,39 @@ namespace Nop.Plugin.Xrms.Areas.Admin.Models
         }
 
         #endregion // Table
+
+        #region Current Order
+
+        // from entity to view model
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public static CurrentOrderListItemViewModel ToListItemViewModel(this CurrentOrder entity)
+        {
+            return entity.MapTo<CurrentOrder, CurrentOrderListItemViewModel>();
+        }
+
+        public static CurrentOrderDetailsPageViewModel ToDetailsViewModel(this CurrentOrder entity)
+        {
+            return entity.MapTo<CurrentOrder, CurrentOrderDetailsPageViewModel>();
+        }
+
+        public static CurrentOrderDetailsPageViewModel ToDetailsViewModel(this CurrentOrder entity, CurrentOrderDetailsPageViewModel viewModel)
+        {
+            return entity.MapTo(viewModel);
+        }
+
+        public static NotifyCreatedOrderModel ToNotifyCreatedOrderModel(this CurrentOrder entity)
+        {
+            return entity.MapTo<CurrentOrder, NotifyCreatedOrderModel>();
+        }
+
+        public static NotifyChangedOrderItemModel ToNotifyChangedOrderItemModel(this CurrentOrder entity)
+        {
+            return entity.MapTo<CurrentOrder, NotifyChangedOrderItemModel>();
+        }
+        #endregion // Current Order
     }
 }

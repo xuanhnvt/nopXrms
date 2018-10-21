@@ -6,10 +6,33 @@ using Nop.Core.Domain.Localization;
 namespace Nop.Plugin.Xrms.Domain
 {
     /// <summary>
-    /// Represents a material group
+    /// Represents the current order status enumeration
+    /// </summary>
+    public enum CurrentOrderItemState
+    {
+        Created = 0,
+        Updated = 10,
+        Processing = 20,
+        Processed = 30,
+        Served = 40,
+        Cancelled = 100
+    }
+
+    /// <summary>
+    /// Represents current order item
     /// </summary>
     public partial class CurrentOrderItem : BaseEntity, ILocalizedEntity
     {
+        /// <summary>
+        /// Gets or sets the aggregate id
+        /// </summary>
+        public Guid AggregateId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the version
+        /// </summary>
+        public int Version { get; set; }
+
         /// <summary>
         /// Gets or sets the current order id
         /// </summary>
@@ -63,22 +86,22 @@ namespace Nop.Plugin.Xrms.Domain
         /// <summary>
         /// Gets or sets the date start processing product
         /// </summary>
-        public DateTime? StartedDateUtc { get; set; }
+        public DateTime? StartedProcessingOnUtc { get; set; }
 
         /// <summary>
         /// Gets or sets the date stop processing product
         /// </summary>
-        public DateTime? StoppedDateUtc { get; set; }
+        public DateTime? StoppedProcessingOnUtc { get; set; }
 
         /// <summary>
         /// Gets or sets the date serving product
         /// </summary>
-        public DateTime? ServedDateUtc { get; set; }
+        public DateTime? ServedOnUtc { get; set; }
 
         /// <summary>
         /// Gets or sets the order state
         /// </summary>
-        public int State { get; set; }
+        public int StateId { get; set; }
 
         /// <summary>
         /// Gets or sets the display order
@@ -109,5 +132,14 @@ namespace Nop.Plugin.Xrms.Domain
         /// Gets or sets the current order
         /// </summary>
         public virtual CurrentOrder CurrentOrder { get; set; }
+
+        /// <summary>
+        /// Get or set item state
+        /// </summary>
+        public CurrentOrderItemState State
+        {
+            get => (CurrentOrderItemState)StateId;
+            set => StateId = (int)value;
+        }
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.Extensions.FileProviders;
 using Nop.Core.Infrastructure;
 using Nop.Plugin.Xrms.Controllers;
 using Nop.Plugin.Xrms.Data;
+using Nop.Plugin.Xrms.Hubs;
 using Nop.Web.Framework.Infrastructure.Extensions;
 
 namespace Nop.Plugin.Xrms.Infrastructure
@@ -30,6 +31,8 @@ namespace Nop.Plugin.Xrms.Infrastructure
                 options.FileProviders.Add(
                     new EmbeddedFileProvider(pluginAssembly));
             });
+
+            services.AddSignalR();
         }
 
         /// <summary>
@@ -38,7 +41,10 @@ namespace Nop.Plugin.Xrms.Infrastructure
         /// <param name="application">Builder for configuring an application's request pipeline</param>
         public void Configure(IApplicationBuilder application)
         {
-
+            application.UseSignalR(routes =>
+            {
+                routes.MapHub<CashierOrderHub>("/cashier-order-hub");
+            });
         }
 
         /// <summary>
@@ -46,8 +52,8 @@ namespace Nop.Plugin.Xrms.Infrastructure
         /// </summary>
         public int Order
         {
-            //MVC should be loaded last
-            get { return 1000; }
+            // loaded before MVC. MVC should be loaded last
+            get { return 999; }
         }
     }
 }

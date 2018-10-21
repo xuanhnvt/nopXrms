@@ -5,7 +5,6 @@
   "Pickup.PickupInStore",
   "Shipping.FixedByWeightByTotal",
   "Tax.FixedOrByCountryStateZip",
-  "Widgets.NivoSlider",
   "Payments.Manual",
   "Xrms"
 ]

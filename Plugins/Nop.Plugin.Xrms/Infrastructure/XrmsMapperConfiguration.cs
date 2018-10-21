@@ -10,6 +10,7 @@ using Nop.Plugin.Xrms.Areas.Admin.Models.MaterialGroups;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Materials;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Suppliers;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Tables;
+using Nop.Plugin.Xrms.Areas.Admin.Models.CurrentOrders;
 
 namespace Nop.Plugin.Xrms.Infrastructure
 {
@@ -79,6 +80,16 @@ namespace Nop.Plugin.Xrms.Infrastructure
             CreateMap<UpdateTableModel, TableDetailsPageViewModel>();
 
             #endregion // Table
+
+            #region Current Order
+
+            // from entity to view model
+            CreateMap<CurrentOrder, CurrentOrderListItemViewModel>();
+            CreateMap<CurrentOrder, CurrentOrderDetailsPageViewModel>();
+            CreateMap<CurrentOrder, NotifyCreatedOrderModel>();
+            CreateMap<CurrentOrder, NotifyChangedOrderItemModel>();
+
+            #endregion // Current Order
 
         }
 

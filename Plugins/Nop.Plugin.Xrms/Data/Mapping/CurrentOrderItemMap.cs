@@ -32,6 +32,7 @@ namespace Nop.Plugin.Xrms.Data.Mapping
             builder.ToTable("XrmsCurrentOrderItem");
             builder.HasKey(orderItem => orderItem.Id);
             builder.HasOne(orderItem => orderItem.CurrentOrder).WithMany(order => order.CurrentOrderItems).HasForeignKey(orderItem => orderItem.CurrentOrderId).IsRequired();
+            builder.Ignore(orderItem => orderItem.State);
             base.Configure(builder);
         }
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Nop.Core;
 using Nop.Plugin.Xrms.Domain;
@@ -32,6 +33,12 @@ namespace Nop.Plugin.Xrms.Services
         /// <param name="tableId">Table identifier</param>
         /// <returns>Table</returns>
         Table GetTableById(int tableId);
+
+        /// Gets a table from aggregate id
+        /// </summary>
+        /// <param name="aggregateId"> Aggregate identifier</param>
+        /// <returns>Table</returns>
+        Table GetTableByAggregateId(Guid aggregateId);
 
         /// <summary>
         /// Inserts table

@@ -201,6 +201,22 @@ namespace Nop.Plugin.Xrms.Services
             return _cacheManager.Get(key, () => _tableRepository.GetById(tableId));
         }
 
+        /// Gets a table from aggregate id
+        /// </summary>
+        /// <param name="aggregateId"> Aggregate identifier</param>
+        /// <returns>Table</returns>
+        public Table GetTableByAggregateId(Guid aggregateId)
+        {
+            if (aggregateId == Guid.Empty)
+                return null;
+
+            var query = from t in _tableRepository.Table
+                        where t.AggregateId == aggregateId
+                        select t;
+            var table = query.FirstOrDefault();
+            return table;
+        }
+
         /// <summary>
         /// Inserts table
         /// </summary>

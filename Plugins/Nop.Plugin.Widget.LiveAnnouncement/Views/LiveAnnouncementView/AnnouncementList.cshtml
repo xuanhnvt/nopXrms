@@ -1,0 +1,112 @@
+﻿@model Nop.Plugin.Widget.LiveAnnouncement.Models.AnnouncementModel
+@using Nop.Core.Infrastructure
+@using Nop.Web.Framework
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<Nop.Core.Domain.Common.AdminAreaSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<Nop.Core.Domain.Common.AdminAreaSettings>().GridPageSizes;
+
+    Layout = "_AdminLayout";
+    //page title
+    ViewBag.Title = T("Admin.Plugins.HomePageProduct").Text;
+
+}
+<div class="content-header clearfix">
+    <div class="pull-right">
+        <a href="../LiveAnnouncement/Announcement" class="btn bg-blue">
+            <i class="fa fa-floppy-o"></i>
+            Add
+        </a>
+    </div>
+</div>
+<div class="content">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="Announcement-grid"></div>
+
+                    <script>
+    $(document).ready(function () {
+        $("#Announcement-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url:  "@Html.Raw(Url.Action("AnnouncementList", "LiveAnnouncement"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: addAntiForgeryToken
+                    },
+                                    destroy: {
+                                        url: "@Html.Raw(Url.Action("Delete", "LiveAnnouncement"))",
+                                        type: "POST",
+                                        dataType: "json",
+                                        data: addAntiForgeryToken
+                                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        id: "Id"
+                    }
+                },
+                error: function(e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)]
+                        },
+                        editable: {
+                            confirmation: false,
+                            mode: "inline"
+                        },
+                        scrollable: false,
+                        columns: [{
+                            field: "Name",
+                            title: "Name",
+                            width: 100
+                        }, {
+                            field: "Body",
+                            title: "Body",
+                            width: 100,
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" }
+                        },
+                        {
+                            field: "IsActive",
+                            title: "IsActive",
+                            width: 100,
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" }
+                        },
+                        {
+                            title: "Edite",
+                            width: 100,
+                            template: '<a href="Edit/#=Id#">@T("Admin.Common.Edit")</a>'
+                        },{
+                                command: { name: "destroy", text: "@T("Admin.Common.Delete")" },
+                                title: "@T("Admin.Common.Delete")",
+                                width: 100,
+                                headerAttributes: { style: "text-align:center" },
+                                attributes: { style: "text-align:center" }
+                            }]
+                    });
+                });
+                    </script>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+

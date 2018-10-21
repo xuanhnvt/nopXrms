@@ -18,6 +18,10 @@
   </Target>
 
   <ItemGroup>
+    <None Remove="Areas\Admin\Views\CashierOrder\Create.cshtml" />
+    <None Remove="Areas\Admin\Views\CashierOrder\Edit.cshtml" />
+    <None Remove="Areas\Admin\Views\CashierOrder\List.cshtml" />
+    <None Remove="Areas\Admin\Views\CashierOrder\_CreateOrUpdate.cshtml" />
     <None Remove="Areas\Admin\Views\Table\Create.cshtml" />
     <None Remove="Areas\Admin\Views\Table\Edit.cshtml" />
     <None Remove="Areas\Admin\Views\Table\List.cshtml" />
@@ -39,10 +43,27 @@
     <None Remove="Areas\Admin\Views\ProductExtension\AddProductRecipesPopup.cshtml" />
     <None Remove="Areas\Admin\Views\Supplier\List.cshtml" />
     <None Remove="Areas\Admin\Views\_ViewImports.cshtml" />
+    <None Remove="Content\js\chat.js" />
+    <None Remove="Content\lib\signalr\signalr.js" />
+    <None Remove="Content\lib\signalr\signalr.js.map" />
+    <None Remove="Content\lib\signalr\signalr.min.js" />
+    <None Remove="Content\lib\signalr\signalr.min.js.map" />
     <None Remove="plugin.json" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Areas\Admin\Views\CashierOrder\Create.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Areas\Admin\Views\CashierOrder\Edit.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Areas\Admin\Views\CashierOrder\List.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Areas\Admin\Views\CashierOrder\_CreateOrUpdate.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Areas\Admin\Views\Table\Create.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -109,6 +130,21 @@
     <Content Include="Areas\Admin\Views\_ViewImports.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\js\chat.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\lib\signalr\signalr.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\lib\signalr\signalr.js.map">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\lib\signalr\signalr.min.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\lib\signalr\signalr.min.js.map">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="plugin.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -121,10 +157,25 @@
     <ProjectReference Include="..\..\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj" />
     <ProjectReference Include="..\..\Presentation\Nop.Web\Nop.Web.csproj" />
   </ItemGroup>
-
+  
   <ItemGroup>
     <Folder Include="Areas\Admin\ApiControllers\" />
+    <Folder Include="Content\images\" />
+    <Folder Include="Content\css\" />
     <Folder Include="Controllers\" />
+    <Folder Include="Cqrs\ReadModel\Events\CurrentOrderItem\" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Reference Include="CQRSlite">
+      <HintPath>..\..\Libraries\CQRSlite\bin\Release\netstandard2.0\CQRSlite.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Update="Content\css\styles.css">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
