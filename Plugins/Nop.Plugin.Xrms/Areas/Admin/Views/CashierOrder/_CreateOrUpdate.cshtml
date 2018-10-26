@@ -14,6 +14,9 @@
     const string searchProductsPanelId = "nopcommerce-xrms-order-search-products-box";
     const string hideSearchProductsPanelAttributeName = "HideCashierSearchProductsPanel";
     var hideSearchProductsPanel = genericAttributeService.GetAttribute<bool>(workContext.CurrentCustomer, hideSearchProductsPanelAttributeName);
+
+    Html.AddCssFileParts(ResourceLocation.Head, "~/Plugins/Xrms/Content/css/styles.css");
+    Html.AddScriptParts(ResourceLocation.Head, "~/Plugins/Xrms/Content/lib/signalr/signalr.js");
 }
 
 <div asp-validation-summary="All"></div>
@@ -38,7 +41,7 @@
                             }
                             else
                             {
-                                <button type="button" id="save-cashier-order" name="save" class="btn btn-xs bg-blue">
+                                <button type="button" id="save-cashier-order" name="save" class="btn btn-xs bg-blue updated-row">
                                     <i class="fa fa-floppy-o"></i>
                                     @T("Admin.Common.Save")
                                 </button>
@@ -178,9 +181,7 @@
                                             dataBound: function (e) {
                                                 //alert('dataBound');
                                                 var rows = e.sender.tbody.children();
-
-                                                for (var j = 0; j < rows.length; j++) {
-                                                    /*for (var i = 0; i < orderItemsGridViewData.length; i++) {
+                                                /*for (var i = 0; i < orderItemsGridViewData.length; i++) {
                                                         var currentUid = orderItemsGridViewData[i].uid;
                                                         //alert(orderItemsGridViewData[i].IsUpdated);
                                                         if (orderItemsGridViewData[i].IsUpdated === true) {
@@ -190,12 +191,14 @@
                                                                 .find("tr[data-uid='" + currentUid + "']");
                                                             $(row).addClass("updated-row");
                                                         }*/
-
+                                                for (var j = 0; j < rows.length; j++) {
                                                     var row = $(rows[j]);
                                                     var dataItem = e.sender.dataItem(rows[j]);
                                                         if (dataItem.IsUpdated === true) {
                                                             row.removeClass('k-alt');
-                                                            row.addClass("updated-row");
+                                                            row.addClass('updated-row');
+                                                            //row.css('background-color', 'red');
+                                                            //alert('updated');
                                                     }
                                                     //$(rows[j]).removeClass('k-alt');
                                                 }

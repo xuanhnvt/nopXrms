@@ -6,9 +6,6 @@
     ViewBag.Title = T("Xrms.Admin.Cashier.Orders.Details.Edit.Title").Text;
     //active menu item (system name)
     Html.SetActiveMenuItemSystemName("CashierOrders");
-
-    Html.AddCssFileParts(ResourceLocation.Head, "~/Plugins/Xrms/Content/css/styles.css");
-    Html.AddScriptParts(ResourceLocation.Head, "~/Plugins/Xrms/Content/lib/signalr/signalr.js");
 }
 
 <form asp-controller="CashierOrder" asp-action="Edit" method="post" id="cashier-order-form">

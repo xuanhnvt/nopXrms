@@ -168,7 +168,7 @@
   
   <ItemGroup>
     <Reference Include="CQRSlite">
-      <HintPath>..\..\Libraries\CQRSlite\bin\Release\netstandard2.0\CQRSlite.dll</HintPath>
+      <HintPath>..\..\Libraries\CQRSlite\bin\Debug\netstandard2.0\CQRSlite.dll</HintPath>
     </Reference>
   </ItemGroup>
   
