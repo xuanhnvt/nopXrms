@@ -27,11 +27,11 @@ namespace Nop.Plugin.Xrms.Cqrs.WriteModel.Handlers
 
         public async Task Handle(CreateCmd message)
         {
-            var order = new CurrentOrder(message.Id, message.CommandModel.TableId);
-            foreach (var item in message.CommandModel.AddedOrderItems)
+            var order = new CurrentOrder(message);
+            /*foreach (var item in message.CommandModel.AddedOrderItems)
             {
                 order.AddOrderItem(CompGuid.NewGuid(), item.ProductId, item.Quantity);
-            }
+            }*/
             await _session.Add(order);
             await _session.Commit();
         }

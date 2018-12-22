@@ -11,10 +11,13 @@ namespace Nop.Plugin.Xrms.Domain
     /// </summary>
     public enum CurrentOrderState
     {
-        Created = 0,
-        Serving = 10,
-        Billed = 20,
-        Completed = 30,
+        New = 0,
+        Editted = 10,
+        Serving = 20,
+        Served = 30,
+        Printed = 40,
+        Billed = 50,
+        Completed = 60,
         Cancelled = 100
     }
 
@@ -44,6 +47,16 @@ namespace Nop.Plugin.Xrms.Domain
         /// Gets or sets the table id
         /// </summary>
         public int TableId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the waiter id
+        /// </summary>
+        public int WaiterId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the customer id
+        /// </summary>
+        public int CustomerId { get; set; }
 
         /// <summary>
         /// Gets or sets the order code

@@ -5,12 +5,15 @@ using Microsoft.AspNetCore.Routing;
 using Nop.Core.Plugins;
 using Nop.Services.Localization;
 using Nop.Services.Security;
+using Nop.Services.Customers;
+using Nop.Core.Domain.Customers;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Menu;
 
 using Nop.Plugin.Xrms.Data;
 using Nop.Plugin.Xrms.Domain;
 using Nop.Plugin.Xrms.Services;
+using Nop.Core.Domain.Security;
 
 namespace Nop.Plugin.Xrms
 {
@@ -18,16 +21,19 @@ namespace Nop.Plugin.Xrms
     {
         private readonly XrmsObjectContext _objectContext;
         private readonly ILocalizationService _localizationService;
+        private readonly ICustomerService _customerService;
         private readonly IPermissionService _permissionService;
         private readonly IMaterialGroupService _materialGroupService;
 
         public XrmsPlugin(XrmsObjectContext objectContext,
             ILocalizationService localizationService,
+            ICustomerService customerService,
             IPermissionService permissionService,
             IMaterialGroupService materialGroupService)
         {
             _objectContext = objectContext;
             _localizationService = localizationService;
+            _customerService = customerService;
             _permissionService = permissionService;
             _materialGroupService = materialGroupService;
         }
@@ -39,10 +45,69 @@ namespace Nop.Plugin.Xrms
         {
             _objectContext.Install();
 
-            // add default permission
+            var accessAdminPanelPermission = _permissionService.GetPermissionRecordBySystemName(StandardPermissionProvider.AccessAdminPanel.SystemName);
+            // install system customer role first, and AccessAdminPanel permission
+            var customerRole = new CustomerRole
+            {
+                Name = "Cashiers",
+                Active = true,
+                IsSystemRole = false,
+                SystemName = XrmsCustomerDefaults.CashiersRoleName
+            };
+            customerRole.PermissionRecordCustomerRoleMappings
+                .Add(new PermissionRecordCustomerRoleMapping
+                {
+                    PermissionRecord = accessAdminPanelPermission
+                });
+            _customerService.InsertCustomerRole(customerRole);
+
+            customerRole = new CustomerRole
+            {
+                Name = "Waiters",
+                Active = true,
+                IsSystemRole = false,
+                SystemName = XrmsCustomerDefaults.WaitersRoleName
+            };
+            customerRole.PermissionRecordCustomerRoleMappings
+                .Add(new PermissionRecordCustomerRoleMapping
+                {
+                    PermissionRecord = accessAdminPanelPermission
+                });
+            _customerService.InsertCustomerRole(customerRole);
+
+            customerRole = new CustomerRole
+            {
+                Name = "Kitchen",
+                Active = true,
+                IsSystemRole = false,
+                SystemName = XrmsCustomerDefaults.KitchenRoleName
+            };
+            customerRole.PermissionRecordCustomerRoleMappings
+                .Add(new PermissionRecordCustomerRoleMapping
+                {
+                    PermissionRecord = accessAdminPanelPermission
+                });
+            _customerService.InsertCustomerRole(customerRole);
+            
+            // then add xrms default permission
             _permissionService.InstallPermissions(new XrmsPermissionProvider());
 
+
             // create locales
+            #region Admin Menu
+
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin", "Xrms");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Materials", "Materials");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.MaterialGroups", "Material Groups");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Suppliers", "Suppliers");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Tables", "Tables");
+
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier", "Cashier");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Waiter", "Waiter");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Kitchen", "Kitchen");
+
+            #endregion // Admin Menu
+
             #region Suppliers
 
             _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Catalog.Suppliers.Notifications.Created", "The new supplier has been created successfully.");
@@ -215,48 +280,66 @@ namespace Nop.Plugin.Xrms
 
             #endregion Tables
 
-            #region Orders
+            #region In-Store Orders
 
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Notifications.Created", "The new order has been created successfully.");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Notifications.Updated", "The order has been updated successfully.");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Notifications.Cancelled", "The order has been cancelled successfully.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Notifications.Created", "The new order has been created successfully.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Notifications.Updated", "The order has been updated successfully.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Notifications.Cancelled", "The order has been cancelled successfully.");
 
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.ActivityLog.AddNewOrder", "Added a new order ('{0}')");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.ActivityLog.EditOrder", "Edited a order ('{0}')");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.ActivityLog.CancelOrder", "Cancelled a table ('{0}')");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.ActivityLog.CreateNewInStoreOrder", "Created a new order ('{0}')");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.ActivityLog.EditInStoreOrder", "Editted an order ('{0}')");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.ActivityLog.CancelInStoreOrder", "Cancelled an order ('{0}')");
+
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.Table", "Table");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Validations.Table.Required", "Please provide a '{PropertyName}'.");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.Waiter", "Waiter");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.Code", "Order No");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.State", "State");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.DisplayOrder", "Display Order");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.PrintCount", "Print Count");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.CreatedTime", "Created Time");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.UpdatedTime", "Updated Time");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.BilledTime", "Billed Time");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.CheckedOutTime", "Checkout Time");
+
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.OrderItems.Fields.Modifying", "Modifying");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.OrderItems.Fields.ProductName", "Product");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.OrderItems.Fields.ProductPrice", "Unit price");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.OrderItems.Fields.Quantity", "Quantity");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.OrderItems.Fields.TotalPrice", "Total price");
+
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Details.ProductList.Search.ProductName", "Product name");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.InStoreOrders.Details.ProductList.Search.Category", "Category");
+
+            #endregion In-Store Orders
+
+            #region Cashier Orders
 
             _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.List.Title", "Cashier Orders");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.List.Search.TableName", "Table name");
 
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Create.Title", "Create a new order");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Edit.Title", "Edit order details");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Create.Title", "Create New Order");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Edit.Title", "Edit Order Details");
             _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Buttons.BackToList", "back to order list");
             _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Tabs.OrderDetails", "Order details");
             _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Tabs.OrderDetails.General", "General information");
             _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Tabs.OrderDetails.OrderItems", "Order items");
             _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Tabs.ProductList", "Product list");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Tabs.ProductList.Search.ProductName", "Product Name");
 
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.Table", "Table");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.Table.Required", "Please provide a table.");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.Code", "Order");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.State", "State");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.DisplayOrder", "Display Order");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.PrintCount", "Print count");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.CreatedTime", "Created time");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.UpdatedTime", "Updated time");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.BilledTime", "Billed time");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.CheckedOutTime", "Checkout time");
+            #endregion Cashier Orders
 
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.OrderItems.Fields.Modifying", "Modifying");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.OrderItems.Fields.ProductName", "Product");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.OrderItems.Fields.ProductPrice", "Unit price");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.OrderItems.Fields.Quantity", "Quantity");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.OrderItems.Fields.TotalPrice", "Total price");
+            #region Waiter Orders
 
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.SearchProducts.ProductName", "Product name");
-            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.SearchProducts.Category", "Category");
-            #endregion Orders
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Waiter.Orders.List.Title", "Waiter Orders");
+
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Create.Title", "Create New Order");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Edit.Title", "Edit Order Details");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Buttons.BackToList", "back to order list");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Tabs.OrderDetails", "Order details");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Tabs.OrderDetails.General", "General information");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Tabs.OrderDetails.OrderItems", "Order items");
+            _localizationService.AddOrUpdatePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Tabs.ProductList", "Product list");
+
+            #endregion Waiter Orders
 
             // create default data
             this._materialGroupService.InsertMaterialGroup(new MaterialGroup()
@@ -280,7 +363,32 @@ namespace Nop.Plugin.Xrms
             // remove permissions
             _permissionService.UninstallPermissions(new XrmsPermissionProvider());
 
+            // then remove system customer roles
+            var customerRole = _customerService.GetCustomerRoleBySystemName(XrmsCustomerDefaults.CashiersRoleName);
+            if (customerRole != null)
+                _customerService.DeleteCustomerRole(customerRole);
+            customerRole = _customerService.GetCustomerRoleBySystemName(XrmsCustomerDefaults.WaitersRoleName);
+            if (customerRole != null)
+                _customerService.DeleteCustomerRole(customerRole);
+            customerRole = _customerService.GetCustomerRoleBySystemName(XrmsCustomerDefaults.KitchenRoleName);
+            if (customerRole != null)
+                _customerService.DeleteCustomerRole(customerRole);
+
             // delete all locale resources
+
+            #region Admin Menu
+
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Materials");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.MaterialGroups");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Suppliers");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Tables");
+
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Waiter");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Kitchen");
+
+            #endregion // Admin Menu
 
             #region Suppliers
 
@@ -454,18 +562,43 @@ namespace Nop.Plugin.Xrms
 
             #endregion Tables
 
-            #region Orders
+            #region In-Store Orders
 
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Notifications.Created");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Notifications.Updated");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Notifications.Cancelled");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Notifications.Created");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Notifications.Updated");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Notifications.Cancelled");
 
-            _localizationService.DeletePluginLocaleResource("Xrms.ActivityLog.AddNewOrder");
-            _localizationService.DeletePluginLocaleResource("Xrms.ActivityLog.EditOrder");
-            _localizationService.DeletePluginLocaleResource("Xrms.ActivityLog.CancelOrder");
+            _localizationService.DeletePluginLocaleResource("Xrms.ActivityLog.CreateNewInStoreOrder");
+            _localizationService.DeletePluginLocaleResource("Xrms.ActivityLog.EditInStoreOrder");
+            _localizationService.DeletePluginLocaleResource("Xrms.ActivityLog.CancelInStoreOrder");
+
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.Table");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Validations.Table.Required");
+
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.Waiter");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.Code");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.State");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.DisplayOrder");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.PrintCount");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.CreatedTime");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.UpdatedTime");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.BilledTime");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Fields.CheckedOutTime");
+
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.OrderItems.Fields.Modifying");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.OrderItems.Fields.ProductName");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.OrderItems.Fields.ProductPrice");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.OrderItems.Fields.Quantity");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.OrderItems.Fields.TotalPrice");
+
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Details.ProductList.Search.ProductName");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.InStoreOrders.Details.ProductList.Search.Category");
+
+            #endregion In-Store Orders
+
+            #region Cashier Orders
 
             _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.List.Title");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.List.Search.TableName");
 
             _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Create.Title");
             _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Edit.Title");
@@ -474,37 +607,33 @@ namespace Nop.Plugin.Xrms
             _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Tabs.OrderDetails.General");
             _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Tabs.OrderDetails.OrderItems");
             _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Tabs.ProductList");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.Tabs.ProductList.Search.ProductName");
 
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.Table");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.Table.Required");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.Code");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.State");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.DisplayOrder");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.PrintCount");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.CreatedTime");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.UpdatedTime");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.BilledTime");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Fields.CheckedOutTime");
+            #endregion Cashier Orders
 
+            #region Waiter Orders
 
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.OrderItems.Fields.Modifying");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.OrderItems.Fields.ProductName");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.OrderItems.Fields.ProductPrice");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.OrderItems.Fields.Quantity");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.OrderItems.Fields.TotalPrice");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.SearchProducts.ProductName");
-            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Cashier.Orders.Details.SearchProducts.Category");
-            
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Waiter.Orders.List.Title");
 
-            #endregion Orders
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Create.Title");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Edit.Title");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Buttons.BackToList");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Tabs.OrderDetails");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Tabs.OrderDetails.General");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Tabs.OrderDetails.OrderItems");
+            _localizationService.DeletePluginLocaleResource("Xrms.Admin.Waiter.Orders.Details.Tabs.ProductList");
+
+            #endregion Waiter Orders
 
             base.Uninstall();
         }
 
         public void ManageSiteMap(SiteMapNode rootNode)
         {
-            var pluginNode = new SiteMapNode()
+            var xrmsSitemap = new XmlSiteMap();
+            xrmsSitemap.LoadFrom("~/Plugins/Xrms/Areas/Admin/xrmsSitemap.config");
+            var pluginNode = xrmsSitemap.RootNode;
+            rootNode.ChildNodes.Add(pluginNode);
+            /*var pluginNode = new SiteMapNode()
             {
                 SystemName = "Cashier",
                 Title = "Cashier",
@@ -579,6 +708,7 @@ namespace Nop.Plugin.Xrms
                 Visible = true,
                 RouteValues = new RouteValueDictionary() { { "area", AreaNames.Admin } },
             });
+            */
         }
     }
 }

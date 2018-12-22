@@ -10,10 +10,10 @@ namespace Nop.Plugin.Xrms.Domain
     /// </summary>
     public enum CurrentOrderItemState
     {
-        Created = 0,
-        Updated = 10,
+        New = 0,
+        Editted = 10,
         Processing = 20,
-        Processed = 30,
+        Ready = 30,
         Served = 40,
         Cancelled = 100
     }

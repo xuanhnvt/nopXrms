@@ -28,9 +28,14 @@ namespace Nop.Plugin.Xrms.Cqrs.WriteModel.Domain
 
         public CurrentOrder() { }
 
-        public CurrentOrder(Guid id, int tableId)
+        public CurrentOrder(CreateCmd message)
         {
-            ApplyChange(new CreatedEvent(id, tableId));
+            List<CreatedEvent.OrderItem> orderItems = new List<CreatedEvent.OrderItem>();
+            foreach(var item in message.CommandModel.AddedOrderItems)
+            {
+                orderItems.Add(new CreatedEvent.OrderItem(CompGuid.NewGuid(), item.ProductId, item.Quantity));
+            }
+            ApplyChange(new CreatedEvent(message.Id, message.CommandModel.TableId, orderItems));
         }
 
         private void Apply(CreatedEvent e)
@@ -38,6 +43,16 @@ namespace Nop.Plugin.Xrms.Cqrs.WriteModel.Domain
             _activated = true;
             Id = e.Id;
             TableId = e.TableId;
+            foreach (var item in e.OrderItems)
+            {
+                _orderItems.Add(new OrderItem()
+                {
+                    OrderItemGuid = item.Guid,
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    State = 0
+                });
+            }
         }
 
         private void Apply(ChangedTableEvent e)

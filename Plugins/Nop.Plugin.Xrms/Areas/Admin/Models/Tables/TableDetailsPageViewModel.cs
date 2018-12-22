@@ -9,15 +9,10 @@ namespace Nop.Plugin.Xrms.Areas.Admin.Models.Tables
 {
     public partial class TableDetailsPageViewModel : CreateTableModel
     {
-        public TableDetailsPageViewModel()
-        {
-
-        }
-
         public int Id { get; set; }
 
         [NopResourceDisplayName("Xrms.Admin.Catalog.Tables.Fields.State")]
-        public int State { get; set; }
+        public int StateId { get; set; }
 
         #region Nested classes
 

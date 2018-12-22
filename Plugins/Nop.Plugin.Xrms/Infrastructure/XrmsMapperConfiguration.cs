@@ -10,7 +10,8 @@ using Nop.Plugin.Xrms.Areas.Admin.Models.MaterialGroups;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Materials;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Suppliers;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Tables;
-using Nop.Plugin.Xrms.Areas.Admin.Models.CurrentOrders;
+using Nop.Plugin.Xrms.Areas.Admin.Models.CashierOrders;
+using Nop.Plugin.Xrms.Areas.Admin.Models.InStoreOrders;
 
 namespace Nop.Plugin.Xrms.Infrastructure
 {
@@ -84,8 +85,8 @@ namespace Nop.Plugin.Xrms.Infrastructure
             #region Current Order
 
             // from entity to view model
-            CreateMap<CurrentOrder, CurrentOrderListItemViewModel>();
-            CreateMap<CurrentOrder, CurrentOrderDetailsPageViewModel>();
+            CreateMap<CurrentOrder, InStoreOrderListRowViewModel>();
+            CreateMap<CurrentOrder, CashierOrderDetailsPageViewModel>();
             CreateMap<CurrentOrder, NotifyCreatedOrderModel>();
             CreateMap<CurrentOrder, NotifyChangedOrderItemModel>();
 

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Nop.Core;
-using Nop.Plugin.Xrms.Areas.Admin.Models.CurrentOrders;
+using Nop.Plugin.Xrms.Areas.Admin.Models.InStoreOrders;
 using Nop.Plugin.Xrms.Cqrs.ReadModel.Events.CurrentOrder;
 using Nop.Plugin.Xrms.Hubs;
 using Nop.Services.Localization;
@@ -50,19 +50,21 @@ namespace Nop.Plugin.Xrms.Services
 
         public async Task NotifyChangedOrderItemQuantityEvent(NotifyChangedOrderItemModel message)
         {
-            await _cashierOrderHubContext.Clients.All.SendAsync("ChangedOrderItemQuantityEvent", message);
+            var currentConnection = _httpContextAccessor.HttpContext.Session.GetString("HubConnectionId");
+            await _cashierOrderHubContext.Clients.AllExcept(currentConnection).SendAsync("ChangedOrderItemQuantityEvent", message);
         }
 
         public async Task NotifyChangedOrderItemStateEvent(NotifyChangedOrderItemModel message)
         {
-            await _cashierOrderHubContext.Clients.All.SendAsync("ChangedOrderItemStateEvent", message);
+            var currentConnection = _httpContextAccessor.HttpContext.Session.GetString("HubConnectionId");
+            await _cashierOrderHubContext.Clients.AllExcept(currentConnection).SendAsync("ChangedOrderItemStateEvent", message);
         }
 
 
         public async Task NotifyAddedOrderItemEvent(NotifyChangedOrderItemModel message)
         {
             var currentConnection = _httpContextAccessor.HttpContext.Session.GetString("HubConnectionId");
-            _logger.InsertLog(Core.Domain.Logging.LogLevel.Information, String.Format("Current client connection id = {0}", currentConnection));
+            //_logger.InsertLog(Core.Domain.Logging.LogLevel.Information, String.Format("Current client connection id = {0}", currentConnection));
             await _cashierOrderHubContext.Clients.AllExcept(currentConnection).SendAsync("AddedOrderItemEvent", message);
         }
     }

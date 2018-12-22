@@ -1,0 +1,22 @@
+﻿@model WaiterOrderDetailsPageViewModel
+@{
+    Layout = "_AdminLayout";
+
+    // page title
+    ViewBag.Title = T("Xrms.Admin.Waiter.Orders.Details.Create.Title").Text;
+    // active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Waiter");
+}
+
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("Xrms.Admin.Waiter.Orders.Details.Create.Title")
+        <small>
+            <i class="fa fa-arrow-circle-left"></i>
+            <a asp-action="List">@T("Xrms.Admin.Waiter.Orders.Details.Buttons.BackToList")</a>
+        </small>
+    </h1>
+</div>
+@await Html.PartialAsync("~/Plugins/Xrms/Areas/Admin/Views/WaiterOrder/_CreateOrUpdate.cshtml", Model)
+
+

@@ -12,6 +12,5 @@
   "Shipping.UPS",
   "Tax.FixedOrByCountryStateZip",
   "Widgets.GoogleAnalytics",
-  "Widgets.NivoSlider",
-  "Xrms"
+  "Widgets.NivoSlider"
 ]

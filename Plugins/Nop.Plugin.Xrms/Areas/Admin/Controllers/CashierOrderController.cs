@@ -24,7 +24,6 @@ using Nop.Web.Framework.Mvc.Filters;
 using Nop.Plugin.Xrms.Areas.Admin.Models;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Tables;
 using Nop.Plugin.Xrms.Services;
-using Nop.Plugin.Xrms.Areas.Admin.Models.CurrentOrders;
 using Nop.Plugin.Xrms.Cqrs.WriteModel.Commands.CurrentOrder;
 using CQRSlite.Commands;
 using Nop.Plugin.Xrms.Cqrs;
@@ -37,6 +36,10 @@ using Nop.Services.Helpers;
 using Nop.Plugin.Xrms.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Nop.Plugin.Xrms.Domain;
+using Nop.Plugin.Xrms.Areas.Admin.Validators;
+using FluentValidation.Results;
+using Nop.Plugin.Xrms.Areas.Admin.Models.InStoreOrders;
+using Nop.Plugin.Xrms.Areas.Admin.Models.CashierOrders;
 
 namespace Nop.Plugin.Xrms.Controllers
 {
@@ -96,19 +99,19 @@ namespace Nop.Plugin.Xrms.Controllers
 
         #region Utilities
 
-        protected virtual void PrepareAvailableTables(CurrentOrderDetailsPageViewModel model)
+        protected virtual void PrepareAvailableTables(CashierOrderDetailsPageViewModel model)
         {
             if (model == null)
                 throw new ArgumentNullException(nameof(model));
 
             var tables = _tableService.GetAllTables(showHidden: true);
-            var list = tables.Where(result => result.State == TableState.Free || result.Id == model.TableId).Select(t => new SelectListItem
+            var list = tables.Where(result => result.State == TableState.Free || result.Id == model.OrderView.TableId).Select(t => new SelectListItem
             {
                 Text = t.Name,
                 Value = t.Id.ToString()
             });
             foreach (var item in list)
-                model.AvailableTables.Add(item);
+                model.OrderView.AvailableTables.Add(item);
         }
 
         #endregion Utilities
@@ -125,13 +128,11 @@ namespace Nop.Plugin.Xrms.Controllers
             if (!_permissionService.Authorize(XrmsPermissionProvider.ManageCashierOrders))
                 return AccessDeniedView();
 
-            var viewModel = new CurrentOrderListPageViewModel();
-
-            return View("~/Plugins/Xrms/Areas/Admin/Views/CashierOrder/List.cshtml", viewModel);
+            return View("~/Plugins/Xrms/Areas/Admin/Views/CashierOrder/List.cshtml");
         }
 
         [HttpPost]
-        public virtual IActionResult List(DataSourceRequest command, SearchCurrentOrdersModel model)
+        public virtual IActionResult List(DataSourceRequest command)
         {
             if (!_permissionService.Authorize(XrmsPermissionProvider.ManageCashierOrders))
                 return AccessDeniedKendoGridJson();
@@ -139,22 +140,22 @@ namespace Nop.Plugin.Xrms.Controllers
             var orders = _currentOrderService.GetAllOrders(command.Page - 1, command.PageSize);
 
             // prepare list view model
-            var gridViewModel = new DataSourceResult
+            var listViewModel = new DataSourceResult
             {
                 Data = orders.Select(x =>
                 {
-                    var itemViewModel = x.ToListItemViewModel();
-                    itemViewModel.CreatedOnUtc = _dateTimeHelper.ConvertToUserTime(x.CreatedOnUtc, DateTimeKind.Utc).ToString("dd/MM HH:mm:ss");
-                    itemViewModel.UpdatedOnUtc = _dateTimeHelper.ConvertToUserTime(x.UpdatedOnUtc, DateTimeKind.Utc).ToString("dd/MM HH:mm:ss");
+                    var rowViewModel = x.ToListItemViewModel();
+                    rowViewModel.CreatedOnUtc = _dateTimeHelper.ConvertToUserTime(x.CreatedOnUtc, DateTimeKind.Utc).ToString("dd/MM HH:mm:ss");
+                    rowViewModel.UpdatedOnUtc = _dateTimeHelper.ConvertToUserTime(x.UpdatedOnUtc, DateTimeKind.Utc).ToString("dd/MM HH:mm:ss");
                     if (x.BilledOnUtc.HasValue)
                     {
-                        itemViewModel.BilledOnUtc = _dateTimeHelper.ConvertToUserTime((DateTime)x.BilledOnUtc.Value, DateTimeKind.Utc).ToString("dd/MM HH:mm:ss");
+                        rowViewModel.BilledOnUtc = _dateTimeHelper.ConvertToUserTime((DateTime)x.BilledOnUtc.Value, DateTimeKind.Utc).ToString("dd/MM HH:mm:ss");
                     }
-                    return itemViewModel;
+                    return rowViewModel;
                 }),
                 Total = orders.TotalCount
             };
-            return Json(gridViewModel);
+            return Json(listViewModel);
         }
 
         #endregion List
@@ -166,7 +167,8 @@ namespace Nop.Plugin.Xrms.Controllers
             if (!_permissionService.Authorize(XrmsPermissionProvider.ManageCashierOrders))
                 return AccessDeniedView();
 
-            var viewModel = new CurrentOrderDetailsPageViewModel();
+            var viewModel = new CashierOrderDetailsPageViewModel();
+
             // prepare view model
             PrepareAvailableTables(viewModel);
 
@@ -174,65 +176,51 @@ namespace Nop.Plugin.Xrms.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(string model, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create(string jsonModel, CancellationToken cancellationToken)
         {
             if (!_permissionService.Authorize(XrmsPermissionProvider.ManageCashierOrders))
                 return AccessDeniedView();
 
-            if (!String.IsNullOrEmpty(model))
+            if (!String.IsNullOrEmpty(jsonModel))
             {
                 try
                 {
-                    CreateCurrentOrderModel orderModel = JsonConvert.DeserializeObject<CreateCurrentOrderModel>(model);
+                    CreateInStoreOrderModel model = JsonConvert.DeserializeObject<CreateInStoreOrderModel>(jsonModel);
+
+                    // validate model
+                    CreateInStoreOrderModelValidator validator = new CreateInStoreOrderModelValidator(this._localizationService);
+                    ValidationResult results = validator.Validate(model);
+
+                    if (!results.IsValid)
+                    {
+                        _logger.InsertLog(LogLevel.Error, "Create Order: Validation Error", results.ToString());
+                        List<string> errorList = new List<string>();
+                        foreach (var failure in results.Errors)
+                        {
+                            //Console.WriteLine("Property " + failure.PropertyName + " failed validation. Error was: " + failure.ErrorMessage);
+                            errorList.Add(failure.ErrorMessage);
+                        }
+                        return BadRequest(errorList);
+                    }
+
+                    // no error, send command
                     Guid guid = CompGuid.NewGuid();
-                    int length = orderModel.AddedOrderItems.Count;
-                    await _commandSender.Send(new CreateCmd(guid, orderModel), cancellationToken);
-                    return Json(guid);
+                    await _commandSender.Send(new CreateCmd(guid, model), cancellationToken);
+                    return Ok(guid);
                 }
                 catch (Exception ex)
                 {
-                    _logger.InsertLog(LogLevel.Error, "Create order error", ex.Message);
-                    return Json("An Error Has occoured");
+                    _logger.InsertLog(LogLevel.Error, "Create Order: Exception Error", ex.Message);
+                    return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
                 }
             }
             else
             {
-                return Json("An Error Has occoured");
+                _logger.InsertLog(LogLevel.Error, "Create Order: Empty Object", "Request object is null or empty.");
+                return BadRequest("Request object is null or empty.");
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> UpdateOrderItems(string hubConnectionId, string model, CancellationToken cancellationToken)
-        {
-            if (!_permissionService.Authorize(XrmsPermissionProvider.ManageCashierOrders))
-                return AccessDeniedView();
-
-            if (!String.IsNullOrEmpty(model))
-            {
-                try
-                {
-                    UpdateCurrentOrderItemsModel orderModel = JsonConvert.DeserializeObject<UpdateCurrentOrderItemsModel>(model);
-
-                    _logger.InsertLog(LogLevel.Information, "XRms order info", String.Format("AggregateId = {0}, Version = {1}", orderModel.AggregateId, orderModel.Version));
-                    //session save
-                    HttpContext.Session.SetString("HubConnectionId", hubConnectionId);
-
-                    await _commandSender.Send(new UpdateOrderItemsCmd(orderModel.AggregateId, orderModel.Version, orderModel), cancellationToken);
-                    return Ok();
-                }
-                catch (Exception ex)
-                {
-                    _logger.InsertLog(LogLevel.Error, "Update order items error", ex.Message);
-                    throw ex;
-                    //return Json("An Error Has occoured");
-                }
-            }
-            else
-            {
-                return Json("An Error Has occoured");
-            }
-        }
-        
         public virtual IActionResult Edit(Guid id)
         {
             if (!_permissionService.Authorize(XrmsPermissionProvider.ManageCashierOrders))
@@ -243,90 +231,127 @@ namespace Nop.Plugin.Xrms.Controllers
                 // no order found with the specified id
                 return RedirectToAction("List");
 
-            var viewModel = new CurrentOrderDetailsPageViewModel();
-            // set value
-            viewModel.AggregateId = order.AggregateId;
-            viewModel.Version = order.Version;
-            viewModel.Id = order.Id;
-            viewModel.TableId = order.TableId;
+            var viewModel = new CashierOrderDetailsPageViewModel();
+            // prepare view model
+            viewModel.OrderView.AggregateId = order.AggregateId;
+            viewModel.OrderView.Version = order.Version;
+            viewModel.OrderView.Id = order.Id;
+            viewModel.OrderView.TableId = order.TableId;
+            viewModel.OrderView.TableName = order.Table.Name;
             PrepareAvailableTables(viewModel);
 
             return View("~/Plugins/Xrms/Areas/Admin/Views/CashierOrder/Edit.cshtml", viewModel);
         }
 
         [HttpPost]
-        public virtual IActionResult GetOrderItems(int currentOrderId)
+        public virtual IActionResult GetOrderItems(int orderId)
         {
             if (!_permissionService.Authorize(XrmsPermissionProvider.ManageCashierOrders))
                 return AccessDeniedKendoGridJson();
 
-            var orderItems = _currentOrderService.GetOrderItems(currentOrderId);
+            var orderItems = _currentOrderService.GetOrderItems(orderId);
 
             // prepare list view model
-            var gridModel = new DataSourceResult
+            var listViewModel = new DataSourceResult
             {
                 Data = orderItems.Select(item =>
                 {
                     var product = _productService.GetProductById(item.ProductId);
                     // fill in model values from the entity
-                    var orderItemModel = new CurrentOrderDetailsPageViewModel.OrderItemViewModel()
+                    var rowViewModel = new InStoreOrderItemListRowViewModel()
                     {
                         Id = item.Id,
                         AggregateId = item.AggregateId,
                         ProductId = item.ProductId,
                         Quantity = item.Quantity,
                         OldQuantity = item.Quantity,
-                        //CurrentOrderId = item.CurrentOrderId,
                         Version = item.Version,
 
                         ProductName = product.Name,
                         ProductPrice = product.Price
                     };
-                    return orderItemModel;
+                    return rowViewModel;
                 }),
                 Total = orderItems.Count
             };
-            return Json(gridModel);
+            return Json(listViewModel);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateOrderItems(string hubConnectionId, string jsonModel, CancellationToken cancellationToken)
+        {
+            if (!_permissionService.Authorize(XrmsPermissionProvider.ManageCashierOrders))
+                return AccessDeniedView();
+
+            if (!String.IsNullOrEmpty(jsonModel))
+            {
+                try
+                {
+                    UpdateInStoreOrderItemsModel model = JsonConvert.DeserializeObject<UpdateInStoreOrderItemsModel>(jsonModel);
+
+                    _logger.InsertLog(LogLevel.Information, "XRMS current in-store order info", String.Format("AggregateId = {0}, Version = {1}", model.AggregateId, model.Version));
+
+                    // validate model
+
+                    // save hub connection into session
+                    HttpContext.Session.SetString("HubConnectionId", hubConnectionId);
+
+                    // send command
+                    await _commandSender.Send(new UpdateOrderItemsCmd(model.AggregateId, model.Version, model), cancellationToken);
+
+                    return Ok();
+                }
+                catch (Exception ex)
+                {
+                    _logger.InsertLog(LogLevel.Error, "Update Order Items: Exception Error", ex.Message);
+                    return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+                }
+            }
+            else
+            {
+                _logger.InsertLog(LogLevel.Error, "Update Order Items: Empty Object", "Request object is null or empty.");
+                return BadRequest("Request object is null or empty.");
+            }
+        }
+
         #endregion Create / Edit / Delete
 
         #region Product List
 
         [HttpPost]
-        public virtual IActionResult SearchProducts(DataSourceRequest command, CurrentOrderDetailsPageViewModel.SearchProductsModel searchModel)
+        public virtual IActionResult SearchProducts(DataSourceRequest command, ProductListViewModel.SearchProductsModel searchModel)
         {
             if (!_permissionService.Authorize(XrmsPermissionProvider.ManageCashierOrders))
                 return AccessDeniedKendoGridJson();
 
-            var categoryIds = new List<int> { searchModel.SearchCategoryId };
+            var categoryIds = new List<int> { searchModel.CategoryId };
 
             // get products
             var products = _productService.SearchProducts(showHidden: true,
                 pageIndex: command.Page - 1,
                 pageSize: command.PageSize,
                 categoryIds: categoryIds,
-                keywords: searchModel.SearchProductName);
+                keywords: searchModel.ProductName);
 
             // prepare list view model
-            var gridModel = new DataSourceResult
+            var listViewModel = new DataSourceResult
             {
                 Data = products.Select(product =>
                 {
                     // fill in model values from the entity
-                    var productModel = new CurrentOrderDetailsPageViewModel.ProductListItemViewModel()
+                    var rowViewModel = new ProductListViewModel.ProductListRowViewModel()
                     {
                         Id = product.Id,
                         Name = product.Name,
                         Price = product.Price,
                         Quantity = 1
                     };
-                    return productModel;
+                    return rowViewModel;
                 }),
                 Total = products.TotalCount
             };
-            return Json(gridModel);
+            return Json(listViewModel);
         }
-
         #endregion
     }
 }

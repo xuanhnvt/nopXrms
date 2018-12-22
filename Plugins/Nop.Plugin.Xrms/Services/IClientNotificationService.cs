@@ -1,5 +1,5 @@
 ﻿using CQRSlite.Events;
-using Nop.Plugin.Xrms.Areas.Admin.Models.CurrentOrders;
+using Nop.Plugin.Xrms.Areas.Admin.Models.InStoreOrders;
 using Nop.Plugin.Xrms.Cqrs.ReadModel.Events.CurrentOrder;
 using System;
 using System.Collections.Generic;

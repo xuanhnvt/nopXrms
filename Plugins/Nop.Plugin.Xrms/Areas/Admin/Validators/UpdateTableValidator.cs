@@ -12,7 +12,8 @@ namespace Nop.Plugin.Xrms.Areas.Admin.Validators
     {
         public UpdateTableValidator(ILocalizationService localizationService)
         {
-            RuleFor(x => x.Name).NotEmpty().WithMessage(localizationService.GetResource("Xrms.Admin.Catalog.Tables.Fields.Name.Required"));
+            //RuleFor(x => x.Name).NotEmpty().WithMessage(localizationService.GetResource("Xrms.Admin.Catalog.Tables.Fields.Name.Required"));
+            RuleFor(x => x.Name).NotEmpty();
         }
     }
 }

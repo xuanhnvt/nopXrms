@@ -22,6 +22,6 @@ namespace Nop.Plugin.Xrms.Areas.Admin.Models.Tables
 
         public int DisplayOrder { get; set; }
 
-        public int State { get; set; }
+        public int StateId { get; set; }
     }
 }

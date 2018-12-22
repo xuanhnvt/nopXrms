@@ -5,7 +5,9 @@ using Nop.Core.Infrastructure.Mapper;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Materials;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Suppliers;
 using Nop.Plugin.Xrms.Areas.Admin.Models.Tables;
-using Nop.Plugin.Xrms.Areas.Admin.Models.CurrentOrders;
+
+using Nop.Plugin.Xrms.Areas.Admin.Models.CashierOrders;
+using Nop.Plugin.Xrms.Areas.Admin.Models.InStoreOrders;
 
 namespace Nop.Plugin.Xrms.Areas.Admin.Models
 {
@@ -277,17 +279,17 @@ namespace Nop.Plugin.Xrms.Areas.Admin.Models
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        public static CurrentOrderListItemViewModel ToListItemViewModel(this CurrentOrder entity)
+        public static InStoreOrderListRowViewModel ToListItemViewModel(this CurrentOrder entity)
         {
-            return entity.MapTo<CurrentOrder, CurrentOrderListItemViewModel>();
+            return entity.MapTo<CurrentOrder, InStoreOrderListRowViewModel>();
         }
 
-        public static CurrentOrderDetailsPageViewModel ToDetailsViewModel(this CurrentOrder entity)
+        public static CashierOrderDetailsPageViewModel ToDetailsViewModel(this CurrentOrder entity)
         {
-            return entity.MapTo<CurrentOrder, CurrentOrderDetailsPageViewModel>();
+            return entity.MapTo<CurrentOrder, CashierOrderDetailsPageViewModel>();
         }
 
-        public static CurrentOrderDetailsPageViewModel ToDetailsViewModel(this CurrentOrder entity, CurrentOrderDetailsPageViewModel viewModel)
+        public static CashierOrderDetailsPageViewModel ToDetailsViewModel(this CurrentOrder entity, CashierOrderDetailsPageViewModel viewModel)
         {
             return entity.MapTo(viewModel);
         }

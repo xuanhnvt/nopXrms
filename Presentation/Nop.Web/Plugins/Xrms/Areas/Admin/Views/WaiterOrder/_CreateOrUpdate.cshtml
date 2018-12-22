@@ -1,0 +1,696 @@
+﻿@model WaiterOrderDetailsPageViewModel
+@inject AdminAreaSettings adminAreaSettings
+@inject Nop.Services.Common.IGenericAttributeService genericAttributeService
+@inject IWorkContext workContext
+@{
+
+    var defaultGridPageSize = adminAreaSettings.DefaultGridPageSize;
+    var gridPageSizes = adminAreaSettings.GridPageSizes;
+
+    const string orderDetailsPanelId = "nopcommerce-xrms-waiter-order-details-box";
+    const string hideOrderDetailsPanelAttributeName = "HideWaiterOrderDetailsPanel";
+    var hideOrderDetailsPanel = genericAttributeService.GetAttribute<bool>(workContext.CurrentCustomer, hideOrderDetailsPanelAttributeName);
+
+    const string searchProductsPanelId = "nopcommerce-xrms-order-search-products-box";
+    const string hideSearchProductsPanelAttributeName = "HideWaiterSearchProductsPanel";
+    var hideSearchProductsPanel = genericAttributeService.GetAttribute<bool>(workContext.CurrentCustomer, hideSearchProductsPanelAttributeName);
+
+    Html.AddCssFileParts(ResourceLocation.Head, "~/Plugins/Xrms/Content/css/styles.css");
+    Html.AddScriptParts(ResourceLocation.Head, "~/Plugins/Xrms/Content/lib/signalr/signalr.js");
+}
+
+<div asp-validation-summary="All"></div>
+
+<div class="content">
+    <div class="form-horizontal">
+        <form asp-controller="WaiterOrder" asp-action="Create" method="post" id="waiter-order-form">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box box-info @if (hideOrderDetailsPanel){<text>collapsed-box</text>}" id="@orderDetailsPanelId">
+                        <div class="box-header with-border clearfix">
+                            <div class="box-title">
+                                @T("Xrms.Admin.Waiter.Orders.Details.Tabs.OrderDetails")
+                            </div>
+                            <div class="box-tools pull-right">
+                                @if (Model.OrderView.Id > 0)
+                                {
+                                    <span id="waiter-order-delete" class="btn btn-xs bg-red">
+                                        <i class="fa fa-trash-o"></i>
+                                        @T("Admin.Common.Delete")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <button type="button" id="save-waiter-order" name="save" class="btn btn-xs bg-blue updated-row">
+                                        <i class="fa fa-floppy-o"></i>
+                                        @T("Admin.Common.Save")
+                                    </button>
+                                    <button type="button" name="save-continue" class="btn btn-xs bg-blue">
+                                        <i class="fa fa-floppy-o"></i>
+                                        @T("Admin.Common.SaveContinue")
+                                    </button>
+                                }
+                                <button type="button" class="btn btn-box-tool" data-widget="collapse">
+                                    @if (hideOrderDetailsPanel)
+                                    {
+                                        <text><i class="fa fa-plus"></i></text>
+                                    }
+                                    else
+                                    {
+                                        <text><i class="fa fa-minus"></i></text>
+                                    }
+                                </button>
+                            </div>
+                            <nop-delete-confirmation asp-model-id="@Model.OrderView.Id" asp-button-id="waiter-order-delete" />
+                        </div>
+                        <div class="box-body">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    @T("Admin.Catalog.Products.CommonInfo")
+                                </div>
+                                <div class="panel-body">
+                                    @if (Model.OrderView.Id > 0)
+                                    {
+                                        <div class="form-group">
+                                            <div class="col-md-3">
+                                                <nop-label asp-for="@Model.OrderView.OrderCode" />
+                                            </div>
+                                            <div class="col-md-9">
+                                                <div class="form-text-row">@Model.OrderView.OrderCode</div>
+                                            </div>
+                                        </div>
+                                    }
+                                    <div class="form-group">
+                                        <div class="col-md-3">
+                                            <nop-label asp-for="@Model.OrderView.TableId" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <nop-select asp-for="@Model.OrderView.TableId" asp-items="@Model.OrderView.AvailableTables" />
+                                            <span asp-validation-for="@Model.OrderView.TableId"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="panel panel-default" id="tier-prices">
+                                <div class="panel-heading">
+                                    @T("Xrms.Admin.Waiter.Orders.Details.Tabs.OrderDetails.OrderItems")
+                                </div>
+                                <div class="panel-body">
+                                    <div id="order-items-grid"></div>
+                                    <script>
+                                    function OrderItemModel(id, productId, quantity, aggregateId, version) {
+                                        this.Id = id;
+                                        this.ProductId = productId;
+                                        this.Quantity = quantity;
+                                        this.AggregateId = aggregateId;
+                                        this.Version = version;
+                                    }
+                                    var OrderItemViewModel = kendo.data.Model.define({
+                                        id: "Id",
+                                        fields: {
+                                            Id: {
+                                                type: "number",
+                                                editable: false, // this field is not editable
+                                                defaultValue: 0 // a default value will be assigned
+                                            },
+                                            AggregateId: { editable: false, type: "string", default: "00000000-0000-0000-0000-000000000000" },
+                                            Version: { editable: false, type: "number", default: 0 },
+                                            //IsDirty: { editable: false, type: "boolean", default: false },
+                                            IsUpdated: { editable: true, type: "boolean", default: false },
+                                            //CurrentOrderId: { editable: false, type: "number" },
+                                            ProductId: { editable: false, type: "number" },
+                                            ProductName: { editable: false, type: "string" },
+                                            Quantity: { editable: true, type: "number" },
+                                            OldQuantity: { editable: true, type: "number" },
+                                            ProductPrice: { editable: false, type: "number" }
+                                        }
+                                    });
+
+                                    var orderItemsGridDataSourceConfig;
+
+                                    $(document).ready(function () {
+
+                                        if (@Model.OrderView.Id > 0) {
+                                            orderItemsGridDataSourceConfig = new kendo.data.DataSource({
+                                                type: "json",
+                                                transport: {
+                                                    read: {
+                                                        url: "@Html.Raw(Url.Action("GetOrderItems", "WaiterOrder"))",
+                                                        type: "POST",
+                                                        dataType: "json",
+                                                        data: function () {
+                                                            var data = {
+                                                                orderId: '@(Model.OrderView.Id)'
+                                                            };
+                                                            addAntiForgeryToken(data);
+                                                            return data;
+                                                        }
+                                                    }
+                                                },
+                                                schema: {
+                                                    data: "Data",
+                                                    total: "Total",
+                                                    errors: "Errors",
+                                                    model: OrderItemViewModel
+                                                },
+                                                error: function (e) {
+                                                    display_kendoui_grid_error(e);
+                                                    // Cancel the changes
+                                                    this.cancelChanges();
+                                                },
+                                                pageSize: @(defaultGridPageSize),
+                                                serverPaging: true,
+                                                serverFiltering: true,
+                                                serverSorting: true
+                                            });
+                                        }
+                                        else {
+                                            orderItemsGridDataSourceConfig = new kendo.data.DataSource({
+                                                data: [],
+                                                schema: {
+                                                    model: OrderItemViewModel
+                                                },
+                                                pageSize: @(defaultGridPageSize)
+                                            });
+                                        }
+
+                                        $("#order-items-grid").kendoGrid({
+                                            dataSource: orderItemsGridDataSourceConfig,
+                                            dataBound: function (e) {
+                                                //alert('dataBound');
+                                                var rows = e.sender.tbody.children();
+                                                /*for (var i = 0; i < orderItemsGridViewData.length; i++) {
+                                                        var currentUid = orderItemsGridViewData[i].uid;
+                                                        //alert(orderItemsGridViewData[i].IsUpdated);
+                                                        if (orderItemsGridViewData[i].IsUpdated === true) {
+                                                            //alert(currentUid);
+                                                            let row = $("#order-items-grid").data("kendoGrid")
+                                                                .tbody
+                                                                .find("tr[data-uid='" + currentUid + "']");
+                                                            $(row).addClass("updated-row");
+                                                        }*/
+                                                for (var j = 0; j < rows.length; j++) {
+                                                    var row = $(rows[j]);
+                                                    var dataItem = e.sender.dataItem(rows[j]);
+                                                        if (dataItem.IsUpdated === true) {
+                                                            row.removeClass('k-alt');
+                                                            row.addClass('updated-row');
+                                                            //row.css('background-color', 'red');
+                                                            //alert('updated');
+                                                    }
+                                                    //$(rows[j]).removeClass('k-alt');
+                                                }
+                                            },
+                                            editable: true,
+                                            scrollable: false,
+                                            columns: [
+                                                {
+                                                    //field: "OldQuantity",
+                                                    title: "@T("Xrms.Admin.InStoreOrders.OrderItems.Fields.Modifying")",
+                                                    width: 100,
+                                                    template: '# if(Quantity !== OldQuantity) {# <i class="fa fa-check true-icon"></i> #} else {# <p></p> #} #'
+                                                },{
+                                                    field: "ProductName",
+                                                    title: "@T("Xrms.Admin.InStoreOrders.OrderItems.Fields.ProductName")"
+                                                }, {
+                                                    field: "Quantity",
+                                                    title: "@T("Xrms.Admin.InStoreOrders.OrderItems.Fields.Quantity")",
+                                                    //integer format
+                                                    format: "{0:0}",
+                                                    width: 150
+                                                }, {
+                                                    field: "ProductPrice",
+                                                    title: "@T("Xrms.Admin.InStoreOrders.OrderItems.Fields.ProductPrice")",
+                                                    width: 100
+                                                }, {
+                                                    //field: "ItemPrice",
+                                                    title: "@T("Xrms.Admin.InStoreOrders.OrderItems.Fields.TotalPrice")",
+                                                    width: 100,
+                                                    template: '<p>#=Quantity*ProductPrice#</p>',
+                                                    editable: false
+                                                }, {
+                                                    command: [
+                                                        {
+                                                            name: "Increase",
+                                                            text: "+",
+                                                            click: function (e) {
+                                                                // prevent page scroll position change
+                                                                e.preventDefault();
+                                                                // e.target is the DOM element representing the button
+                                                                // get the current table row (tr)
+                                                                var tr = $(e.target).closest("tr");
+                                                                //var data = this.dataItem($(e.currentTarget).closest("tr"));
+                                                                // get the data bound to the current table row
+                                                                var data = this.dataItem(tr);
+
+                                                                // update view model
+                                                                //var model = this.dataSource.get(data.Id);
+                                                                data.set("Quantity", data.Quantity + 1);
+                                                                //window.alert("AggregateId: " + data.AggregateId + "\nData Id:" + data.id);
+                                                            }
+                                                        }, {
+                                                            name: "Decrease",
+                                                            text: "-",
+                                                            click: function (e) {
+                                                                // prevent page scroll position change
+                                                                e.preventDefault();
+                                                                // e.target is the DOM element representing the button
+                                                                // get the current table row (tr)
+                                                                var tr = $(e.target).closest("tr");
+                                                                //var data = this.dataItem($(e.currentTarget).closest("tr"));
+                                                                // get the data bound to the current table row
+                                                                var data = this.dataItem(tr);
+
+                                                                // update view model
+                                                                //var model = this.dataSource.get(data.Id);
+                                                                if (data.Quantity > 0) {
+                                                                    data.set("Quantity", data.Quantity - 1);
+                                                                }
+                                                            }
+                                                        }
+                                                    ],
+                                                    width: 200
+                                                }
+                                            ]
+                                        });
+                                    });
+                                    </script>
+                                </div>
+                                <div class="panel-footer">
+                                    @if (Model.OrderView.Id > 0)
+                                    {
+                                        <div class="common-buttons">
+                                            <input type="button" id="updates-order-items" value="@T("ShoppingCart.UpdateCart")" class="button-2 update-cart-button" />
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <script>
+                        var orderVersion = @Model.OrderView.Version;
+                        var orderItemList = [];
+
+                        function AddOrderItemModel(item, index) {
+                            if (item.Id === 0) {
+                                if (item.Quantity != 0) {
+                                    orderItemList.push(new OrderItemModel(item.Id, item.ProductId, item.Quantity, item.AggregateId, item.Version));
+                                }
+                            }
+                            else {
+                                // quantity has changed
+                                if (item.Quantity !== item.OldQuantity) {
+                                    orderItemList.push(new OrderItemModel(item.Id, item.ProductId, item.Quantity, item.AggregateId, item.Version));
+                                }
+                            }
+                        }
+                        // create order
+                        $('#save-waiter-order').click(function (e) {
+                            e.preventDefault();
+                            // get data from view
+
+                            var viewData = $("#order-items-grid").data("kendoGrid").dataSource.data();
+                            viewData.forEach(AddOrderItemModel);
+
+                            var postData = {};
+                            postData.TableId = $('#@Html.IdFor(model => model.OrderView.TableId)').val();
+                            // for testing validation on server
+                            //postData.TableId = 0;
+
+                            postData.AddedOrderItems = orderItemList;
+                            //addAntiForgeryToken(postData);
+                            var testData = {
+                                jsonModel: JSON.stringify(postData)
+                            };
+                            addAntiForgeryToken(testData);
+
+                            $.ajax({
+                                cache: false,
+                                traditional: true,
+                                type: "POST",
+                                //dataType: "json",
+                                //contentType: "application/json; charset=utf-8",
+                                url: "@(Url.Action("Create", "WaiterOrder"))",
+                                data: testData,
+                                /*data: {
+                                    model: JSON.stringify(postData)
+                                },*/
+                                error: function (xhr, status, error) {
+                                    console.log("ERROR : ", xhr);
+                                    console.log("ERROR : ", status);
+                                    console.log("ERROR : ", error);
+                                    alert(error + ": " + xhr.responseText);
+                                    //alert(ajaxOptions + ": " + $xhr.responseJSON);
+                                   // alert($xhr + ": " + $xhr.responseJSON);
+
+                                },
+                                success: function (result, status, xhr) {
+                                    // similar behavior as an HTTP redirect
+                                    var orderGuid = result;
+
+                                    console.log("ERROR : ", result);
+                                    console.log("ERROR : ", status);
+                                    console.log("ERROR : ", xhr);
+                                    window.location.href = '@Url.Action("Edit", "WaiterOrder", new { id = "GUID"})'.replace("GUID", orderGuid);
+                                }
+                            });
+                            return false;
+                        });
+
+                        $('#updates-order-items').click(function (e) {
+                            e.preventDefault();
+                            // get data from view
+
+                            var viewData = $("#order-items-grid").data("kendoGrid").dataSource.data();
+                            viewData.forEach(AddOrderItemModel);
+                            var model = {};
+                            model.AggregateId = '@Model.OrderView.AggregateId';
+                            model.Version = orderVersion;
+                            model.UpdatedOrderItems = orderItemList;
+
+                            connection.invoke('getConnectionId')
+                                .then(function (connectionId) {
+                                    var postData = {
+                                        hubConnectionId: connectionId,
+                                        jsonModel: JSON.stringify(model)
+                                    };
+                                    addAntiForgeryToken(postData);
+                                    // Send the model and hubConnectionId to controller
+                                    $.ajax({
+                                        cache: false,
+                                        traditional: true,
+                                        type: "POST",
+                                        url: "@(Url.Action("UpdateOrderItems", "WaiterOrder"))",
+                                        data: postData,
+                                        error: function (xhr, status, error) {
+                                            alert(error + ": " + xhr.responseText);
+                                        },
+                                        success: function (result) {
+                                            //window.location.href = '@Url.Action("List", "WaiterOrder")';
+                                            // reload order item list
+                                            //var grid = $('#order-items-grid').data('kendoGrid');
+                                            //grid.dataSource.page(1);
+                                            //orderItemList = [];
+                                            window.location.reload();
+                                        }
+                                    });
+                                })
+                                .catch(err => console.error(err.toString()));
+
+                            return false;
+                        });
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </form>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box box-info @if(hideSearchProductsPanel){<text>collapsed-box</text>}" id="@searchProductsPanelId">
+                        <div class="box-header with-border clearfix">
+                            <div class="box-title">
+                                @T("Xrms.Admin.Waiter.Orders.Details.Tabs.ProductList")
+                            </div>
+                            <div class="box-tools pull-right">
+                                <button type="button" class="btn btn-box-tool" data-widget="collapse">
+                                    @if (hideSearchProductsPanel)
+                                    {
+                                        <text><i class="fa fa-plus"></i></text>
+                                    }
+                                    else
+                                    {
+                                        <text><i class="fa fa-minus"></i></text>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                        <div class="box-body">
+
+                            <div class="panel panel-default panel-search panel-popup">
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-sm-6">
+                                            <div class="form-group">
+                                                <div class="col-sm-5">
+                                                    <nop-label asp-for="@Model.ProductListView.SearchProductsView.ProductName" />
+                                                </div>
+                                                <div class="col-sm-7">
+                                                    <nop-editor asp-for="@Model.ProductListView.SearchProductsView.ProductName" />
+                                                </div>
+                                            </div>
+                                            <div class="form-group" @(Model.ProductListView.SearchProductsView.AvailableCategories.SelectionIsNotPossible() ? Html.Raw("style=\"display:none\"") : null)>
+                                                <div class="col-sm-5">
+                                                    <nop-label asp-for="@Model.ProductListView.SearchProductsView.CategoryId" />
+                                                </div>
+                                                <div class="col-sm-7">
+                                                    <nop-select asp-for="@Model.ProductListView.SearchProductsView.CategoryId" asp-items="@Model.ProductListView.SearchProductsView.AvailableCategories" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <button type="button" id="search-products" class="btn btn-primary btn-search">
+                                                <i class="fa fa-search"></i>
+                                                @T("Admin.Common.Search")
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="panel panel-default">
+                                <div class="panel-body">
+                                    <div id="products-grid"></div>
+                                    <script>
+                                    $(document).ready(function() {
+                                        $("#products-grid").kendoGrid({
+                                            dataSource: {
+                                                type: "json",
+                                                transport: {
+                                                    read: {
+                                                        url: "@Html.Raw(Url.Action("SearchProducts", "WaiterOrder"))",
+                                                        type: "POST",
+                                                        dataType: "json",
+                                                        data: function() {
+                                                            var data = {
+                                                                SearchMaterialName: $('#@Html.IdFor(model => model.ProductListView.SearchProductsView.ProductName)').val(),
+                                                                SearchMaterialGroupId: $('#@Html.IdFor(model => model.ProductListView.SearchProductsView.CategoryId)').val()
+                                                            };
+                                                            addAntiForgeryToken(data);
+                                                            return data;
+                                                        }
+                                                    }
+                                                },
+                                                schema: {
+                                                    data: "Data",
+                                                    total: "Total",
+                                                    errors: "Errors",
+                                                    model: {
+                                                        id: "Id",
+                                                        fields: {
+                                                            Name: { editable: false, type: "string" },
+                                                            Price: { editable: false, type: "number" },
+                                                            Quantity: { editable: true, type: "number" }
+                                                        }
+                                                    }
+                                                },
+                                                error: function(e) {
+                                                    display_kendoui_grid_error(e);
+                                                    // Cancel the changes
+                                                    this.cancelChanges();
+                                                },
+                                                pageSize: @(defaultGridPageSize),
+                                                serverPaging: true,
+                                                serverFiltering: true,
+                                                serverSorting: true
+                                            },
+
+                                            pageable: {
+                                                refresh: true,
+                                                pageSizes: [@(gridPageSizes)],
+                                                @await Html.PartialAsync("_GridPagerMessages")
+                                            },
+                                            editable: true,
+                                            scrollable: false,
+                                            columns: [
+                                                {
+                                                    field: "Name",
+                                                    title: "@T("Xrms.Admin.InStoreOrders.OrderItems.Fields.ProductName")"
+                                                }, {
+                                                    field: "Price",
+                                                    title: "@T("Xrms.Admin.InStoreOrders.OrderItems.Fields.ProductPrice")",
+                                                    width: 50
+                                                }, {
+                                                    field: "Quantity",
+                                                    title: "@T("Xrms.Admin.InStoreOrders.OrderItems.Fields.Quantity")",
+                                                    //integer format
+                                                    format: "{0:0}",
+                                                    width: 50
+                                                }, {
+                                                    command: [
+                                                        {
+                                                            name: "Add",
+                                                            click: function(e) {
+                                                                // prevent page scroll position change
+                                                                e.preventDefault();
+                                                                // e.target is the DOM element representing the button
+                                                                // get the current table row (tr)
+                                                                var tr = $(e.target).closest("tr");
+                                                                // get the data bound to the current table row
+                                                                var data = this.dataItem(tr);
+                                                                //alert(JSON.stringify(data) + data.uid);
+                                                                var orderItemsGrid = $("#order-items-grid").data("kendoGrid");
+                                                                var viewModel = new OrderItemViewModel();
+                                                                viewModel.ProductId = data.Id;
+                                                                viewModel.ProductName = data.Name;
+                                                                viewModel.Quantity = data.Quantity;
+                                                                viewModel.ProductPrice = data.Price;
+                                                                viewModel.AggregateId = "00000000-0000-0000-0000-000000000000";
+                                                                orderItemsGrid.dataSource.add(viewModel);
+
+                                                                // reset quantity
+                                                                data.set("Quantity", 1);
+                                                            }
+                                                        }
+                                                    ],
+                                                    width: 50
+                                                }
+                                            ]
+                                        });
+                                    });
+                                    </script>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <script>
+
+
+            $(document).ready(function () {
+                //search button
+                $('#search-products').click(function () {
+                    //search
+                    var grid = $('#products-grid').data('kendoGrid');
+                    grid.dataSource.page(1); //new search. Set page size to 1
+                    //grid.dataSource.read(); we already loaded the grid above using "page" function
+                    return false;
+                });
+
+                $("#@Html.IdFor(model => model.ProductListView.SearchProductsView.ProductName)").keydown(function (event) {
+                    if (event.keyCode === 13) {
+                        $("#search-products").click();
+                        return false;
+                    }
+                });
+                function additionalData() {
+                    var data = {
+                        SearchMaterialName: $('#@Html.IdFor(model => model.ProductListView.SearchProductsView.ProductName)').val(),
+                        SearchMaterialGroupId: $('#@Html.IdFor(model => model.ProductListView.SearchProductsView.CategoryId)').val()
+                    };
+                    addAntiForgeryToken(data);
+                    return data;
+                }
+
+                $('#@orderDetailsPanelId').on('click', 'button[data-widget="collapse"]', function () {
+                    var collapsed = !$('#@orderDetailsPanelId').hasClass('collapsed-box');
+                    saveUserPreferences('@(Url.Action("SavePreference", "Preferences"))', '@hideOrderDetailsPanelAttributeName', collapsed);
+                });
+
+                $('#@searchProductsPanelId').on('click', 'button[data-widget="collapse"]', function () {
+                    var collapsed = !$('#@searchProductsPanelId').hasClass('collapsed-box');
+                    saveUserPreferences('@(Url.Action("SavePreference", "Preferences"))', '@hideSearchProductsPanelAttributeName', collapsed);
+                });
+            });
+
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/cashier-order-hub")
+                .configureLogging(signalR.LogLevel.Information)
+                .build();
+
+            connection.on("AddedOrderItemEvent", (message) => {
+                let orderId = message.aggregateId;
+                if (orderId !== '@Model.OrderView.AggregateId') {
+                    //alert("Message with order id " + orderId + " not for this order " + '@Model.OrderView.AggregateId');
+                    return;
+                }
+
+                var orderItemsGrid = $("#order-items-grid").data("kendoGrid");
+                //var viewModel = message.changedOrderItem;
+                var viewModel = new OrderItemViewModel();
+                viewModel.Id = message.changedOrderItem.id;
+                viewModel.ProductId = message.changedOrderItem.productId;
+                viewModel.ProductName = message.changedOrderItem.productName;
+                viewModel.Quantity = message.changedOrderItem.quantity;
+                viewModel.OldQuantity = message.changedOrderItem.oldQuantity;
+                viewModel.ProductPrice = message.changedOrderItem.productPrice;
+                viewModel.AggregateId = message.changedOrderItem.aggregateId;
+                orderItemsGrid.dataSource.add(viewModel);
+
+                orderVersion = message.version;
+            });
+
+            connection.on("ChangedOrderItemQuantityEvent", (message) => {
+                let orderId = message.aggregateId;
+                if (orderId !== '@Model.OrderView.AggregateId') {
+                    return;
+                }
+                var orderItemGrid = $("#order-items-grid").data("kendoGrid");
+                var orderItemsGridData = orderItemGrid.dataSource.data();
+                var viewModel = orderItemsGridData.find(function (obj) { return obj.AggregateId === message.changedOrderItem.aggregateId; });
+                if (viewModel != undefined) {
+                    //alert(viewModel.uid);
+                    // need to log here
+                    viewModel.set("Quantity", message.changedOrderItem.quantity);
+                    viewModel.set("OldQuantity", message.changedOrderItem.oldQuantity);
+                    viewModel.set("IsUpdated", true);
+                    orderVersion = message.version;
+
+                    // find row
+                    /*let row = $("#order-items-grid").data("kendoGrid")
+                        .tbody
+                        .find("tr[data-uid='" + viewModel.uid + "']");
+                    $(row).addClass("updated-row");*/
+                    /*var orderItemsGridViewData = orderItemGrid.dataSource.data();
+                    for (var i = 0; i < orderItemsGridViewData.length; i++) {
+                        var currentUid = orderItemsGridViewData[i].uid;
+                        //alert(orderItemsGridViewData[i].IsUpdated);
+                        if (orderItemsGridViewData[i].IsUpdated === true) {
+                            //alert(currentUid);
+                            let row = $("#order-items-grid").data("kendoGrid")
+                                .tbody
+                                .find("tr[data-uid='" + currentUid + "']");
+                            $(row).addClass("updated-row");
+                        }
+                    }*/
+                    //alert(row.className);
+                }
+                else {
+                    alert("Not find order item guid " + message.orderItemGuid);
+                    // something error, should reload page
+                    window.location.reload();
+                }
+                /*var viewModel = new OrderItemViewModel();
+                viewModel.ProductId = message.productId;
+                viewModel.ProductName = "Get later";
+                viewModel.Quantity = message.quantity;
+                viewModel.ProductPrice = 0;
+                viewModel.AggregateId = message.orderItemGuid;
+                orderItemsGrid.dataSource.add(viewModel);*/
+            });
+
+            //var obj = objArray.find(function (obj) { return obj.id === 3; });
+            /*hub.invoke('getConnectionId')
+                .then(function (connectionId) {
+                    // Send the connectionId to controller
+                })
+                .catch(err => console.error(err.toString()));*/
+
+            connection.start().catch(err => console.error(err.toString()));
+            </script>
+    </div>
+</div>

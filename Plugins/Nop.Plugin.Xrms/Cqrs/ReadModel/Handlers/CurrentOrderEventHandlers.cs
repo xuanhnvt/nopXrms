@@ -18,9 +18,10 @@ using Nop.Core.Domain.Orders;
 using Nop.Services.Logging;
 using Nop.Core.Data;
 using Nop.Plugin.Xrms.Domain;
-using Nop.Plugin.Xrms.Areas.Admin.Models.CurrentOrders;
+using Nop.Plugin.Xrms.Areas.Admin.Models.CashierOrders;
 using Nop.Plugin.Xrms.Areas.Admin.Models;
 using Nop.Services.Catalog;
+using Nop.Plugin.Xrms.Areas.Admin.Models.InStoreOrders;
 
 namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
 {
@@ -71,15 +72,20 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
         /// Initialize an order, save and add order notes
         /// </summary>
         /// <returns></returns>
-        protected virtual Order InitializeOrder(Guid orderGuid)
+        protected virtual Order InitializeOrder(CreatedEvent message)
         {
+            if (message == null)
+            {
+                throw new ArgumentNullException();
+            }
+
             var currentCustomer = _workContext.CurrentCustomer;
             var currentStore = _storeContext.CurrentStore;
             _logger.InsertLog(Core.Domain.Logging.LogLevel.Information, "Current Context", String.Format("Store = {0}, Customer = {1}", currentStore.Id, currentCustomer.Username));
             var order = new Order
             {
                 StoreId = currentStore.Id,
-                OrderGuid = orderGuid,
+                OrderGuid = message.Id,
                 CustomerId = currentCustomer.Id,
                 CustomerLanguageId = _workContext.WorkingLanguage.Id,
                 CustomerTaxDisplayType = Core.Domain.Tax.TaxDisplayType.ExcludingTax,
@@ -134,7 +140,7 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
                 //ShippingRateComputationMethodSystemName = details.ShippingRateComputationMethodSystemName,
                 //CustomValuesXml = _paymentService.SerializeCustomValues(processPaymentRequest),
                 //VatNumber = details.VatNumber,
-                CreatedOnUtc = DateTime.UtcNow,
+                CreatedOnUtc = message.TimeStamp.UtcDateTime,
                 CustomOrderNumber = string.Empty
             };
 
@@ -167,9 +173,14 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
         
         public async Task Handle(CreatedEvent message, CancellationToken token)
         {
+            if (message == null)
+            {
+                throw new ArgumentNullException();
+            }
+
             try
             {
-                var order = InitializeOrder(message.Id);
+                var order = InitializeOrder(message);
                 var currentOrder = new CurrentOrderEntity()
                 {
                     OrderId = order.Id,
@@ -177,22 +188,50 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
                     AggregateId = message.Id,
                     Version = message.Version,
                     TableId = message.TableId,
+                    WaiterId = order.CustomerId,
+                    State = CurrentOrderState.New,
                     CreatedOnUtc = message.TimeStamp.UtcDateTime,
                     UpdatedOnUtc = message.TimeStamp.UtcDateTime
                 };
+
+                foreach (var item in message.OrderItems)
+                {
+                    currentOrder.CurrentOrderItems.Add(new CurrentOrderItemEntity()
+                    {
+                        AggregateId = item.Guid,
+                        ProductId = item.ProductId,
+                        Quantity = item.Quantity,
+                        CreatedOnUtc = message.TimeStamp.UtcDateTime,
+                        UpdatedOnUtc = message.TimeStamp.UtcDateTime
+                    });
+                }
                 _currentOrderService.InsertOrder(currentOrder);
 
                 var notifyModel = currentOrder.ToNotifyCreatedOrderModel();
                 notifyModel.TableName = currentOrder.Table.Name;
                 notifyModel.CreatedOnUtc = _dateTimeHelper.ConvertToUserTime(currentOrder.CreatedOnUtc, DateTimeKind.Utc).ToString("dd/MM HH:mm:ss");
                 notifyModel.UpdatedOnUtc = _dateTimeHelper.ConvertToUserTime(currentOrder.UpdatedOnUtc, DateTimeKind.Utc).ToString("dd/MM HH:mm:ss");
+                notifyModel.AddedOrderItems = currentOrder.CurrentOrderItems.Select(item =>
+                {
+                    var product = _productService.GetProductById(item.ProductId);
+                    return new InStoreOrderItemListRowViewModel()
+                    {
+                        Id = item.Id,
+                        Version = item.Version,
+                        AggregateId = item.AggregateId,
+                        ProductId = item.ProductId,
+                        Quantity = item.Quantity,
+                        OldQuantity = item.Quantity,
 
+                        ProductName = product.Name,
+                        ProductPrice = product.Price
+                    };
+                }).ToList();
 
                 await this._clientNotificationService.NotifyCreatedOrderEvent(notifyModel);
             }
             catch (Exception ex)
             {
-
                 var @event = _cqrsEventReposiory.Table.Where(e => e.AggregateId == message.Id && e.Version == message.Version).FirstOrDefault();
                 if (@event != null)
                 {
@@ -217,22 +256,22 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
                 CurrentOrderId = order.Id,
                 ProductId = message.ProductId,
                 Quantity = message.Quantity,
-                //AreaId = message.LocationId,
                 CreatedOnUtc = message.TimeStamp.UtcDateTime,
                 UpdatedOnUtc = message.TimeStamp.UtcDateTime
             };
             _currentOrderService.InsertOrderItem(item);
 
             // fill in model values from the entity
-            var notifyModel = order.ToNotifyChangedOrderItemModel(); var product = _productService.GetProductById(item.ProductId);
-            var orderItemModel = new CurrentOrderDetailsPageViewModel.OrderItemViewModel()
+            var notifyModel = order.ToNotifyChangedOrderItemModel();
+            var product = _productService.GetProductById(item.ProductId);
+            var orderItemModel = new InStoreOrderItemListRowViewModel()
             {
                 Id = item.Id,
+                Version = item.Version,
                 AggregateId = item.AggregateId,
                 ProductId = item.ProductId,
                 Quantity = item.Quantity,
                 OldQuantity = item.Quantity,
-                Version = item.Version,
 
                 ProductName = product.Name,
                 ProductPrice = product.Price
@@ -257,7 +296,7 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
 
             // fill in model values from the entity
             var notifyModel = order.ToNotifyChangedOrderItemModel(); var product = _productService.GetProductById(item.ProductId);
-            var orderItemModel = new CurrentOrderDetailsPageViewModel.OrderItemViewModel()
+            var orderItemModel = new InStoreOrderItemListRowViewModel()
             {
                 Id = item.Id,
                 AggregateId = item.AggregateId,
@@ -290,7 +329,7 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
 
             // fill in model values from the entity
             var notifyModel = order.ToNotifyChangedOrderItemModel(); var product = _productService.GetProductById(item.ProductId);
-            var orderItemModel = new CurrentOrderDetailsPageViewModel.OrderItemViewModel()
+            var orderItemModel = new InStoreOrderItemListRowViewModel()
             {
                 Id = item.Id,
                 AggregateId = item.AggregateId,

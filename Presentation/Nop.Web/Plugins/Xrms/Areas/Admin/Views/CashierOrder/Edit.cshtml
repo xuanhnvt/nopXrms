@@ -1,22 +1,20 @@
-﻿@model CurrentOrderDetailsPageViewModel
+﻿@model CashierOrderDetailsPageViewModel
 @{
     Layout = "_AdminLayout";
 
-    //page title
+    // page title
     ViewBag.Title = T("Xrms.Admin.Cashier.Orders.Details.Edit.Title").Text;
-    //active menu item (system name)
-    Html.SetActiveMenuItemSystemName("CashierOrders");
+    // active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Cashier");
 }
 
-<form asp-controller="CashierOrder" asp-action="Edit" method="post" id="cashier-order-form">
-    <div class="content-header clearfix">
-        <h1 class="pull-left">
-            @T("Xrms.Admin.Cashier.Orders.Details.Edit.Title") - @Model.TableName
-            <small>
-                <i class="fa fa-arrow-circle-left"></i>
-                <a asp-action="List">@T("Xrms.Admin.Cashier.Orders.Details.Buttons.BackToList")</a>
-            </small>
-        </h1>
-    </div>
-    @await Html.PartialAsync("~/Plugins/Xrms/Areas/Admin/Views/CashierOrder/_CreateOrUpdate.cshtml", Model)
-</form>
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("Xrms.Admin.Cashier.Orders.Details.Edit.Title") - @Model.OrderView.TableName
+        <small>
+            <i class="fa fa-arrow-circle-left"></i>
+            <a asp-action="List">@T("Xrms.Admin.Cashier.Orders.Details.Buttons.BackToList")</a>
+        </small>
+    </h1>
+</div>
+@await Html.PartialAsync("~/Plugins/Xrms/Areas/Admin/Views/CashierOrder/_CreateOrUpdate.cshtml", Model)

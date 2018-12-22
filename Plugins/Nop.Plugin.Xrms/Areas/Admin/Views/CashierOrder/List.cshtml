@@ -1,14 +1,13 @@
-﻿@model CurrentOrderListPageViewModel
-@inject AdminAreaSettings adminAreaSettings
+﻿@inject AdminAreaSettings adminAreaSettings
 @{
     Layout = "_AdminLayout";
     var defaultGridPageSize = adminAreaSettings.DefaultGridPageSize;
     var gridPageSizes = adminAreaSettings.GridPageSizes;
 
-    //page title
+    // page title
     ViewBag.Title = T("Xrms.Admin.Cashier.Orders.List.Title").Text;
-    //active menu item (system name)
-    Html.SetActiveMenuItemSystemName("CashierOrders");
+    // active menu item (system name)
+    Html.SetActiveMenuItemSystemName("Cashier");
 
     Html.AddScriptParts(ResourceLocation.Head, "~/Plugins/Xrms/Content/lib/signalr/signalr.js");
 }
@@ -23,39 +22,16 @@
             <i class="fa fa-plus-square"></i>
             @T("Admin.Common.AddNew")
         </a>
-        @await Component.InvokeAsync("AdminWidget", new { widgetZone = "admin_current_order_list_buttons" })
+        @await Component.InvokeAsync("AdminWidget", new { widgetZone = "admin_cashier_order_list_buttons" })
     </div>
 </div>
 
 <div class="content">
     <div class="form-horizontal">
         <div class="panel-group">
-            <div class="panel panel-default panel-search">
-                <div class="panel-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <div class="col-md-4">
-                                    <nop-label asp-for="SearchModel.SearchTableName" />
-                                </div>
-                                <div class="col-md-8">
-                                    <nop-editor asp-for="SearchModel.SearchTableName" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="col-md-8 col-md-offset-4">
-                                    <button type="button" id="search-orders" class="btn btn-primary btn-search"><i class="fa fa-search"></i>@T("Admin.Common.Search")</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <div class="panel panel-default">
                 <div class="panel-body">
                     <div id="orders-grid"></div>
-
                     <script type="text/javascript">
                             $(document).ready(function() {
                                 $("#orders-grid").kendoGrid({
@@ -66,7 +42,7 @@
                                                 url: "@Html.Raw(Url.Action("List", "CashierOrder"))",
                                                 type: "POST",
                                                 dataType: "json",
-                                                data: additionalData
+                                                data: addAntiForgeryToken
                                             }
                                         },
                                         schema: {
@@ -76,7 +52,7 @@
                                         },
                                         error: function(e) {
                                             display_kendoui_grid_error(e);
-                                            // Cancel the changes
+                                            // cancel the changes
                                             this.cancelChanges();
                                         },
                                         pageSize: @(defaultGridPageSize),
@@ -93,25 +69,25 @@
                                     columns: [
                                         {
                                             field: "OrderCode",
-                                            title: "@T("Xrms.Admin.Cashier.Orders.Fields.Code")"
+                                            title: "@T("Xrms.Admin.InStoreOrders.Fields.Code")"
                                         }, {
                                             field: "State",
-                                            title: "@T("Xrms.Admin.Cashier.Orders.Fields.State")",
+                                            title: "@T("Xrms.Admin.InStoreOrders.Fields.State")",
                                             width: 150
                                         }, {
                                             field: "TableName",
-                                            title: "@T("Xrms.Admin.Cashier.Orders.Fields.Table")"
+                                            title: "@T("Xrms.Admin.InStoreOrders.Fields.Table")"
                                         }, {
                                             field: "CreatedOnUtc",
-                                            title: "@T("Xrms.Admin.Cashier.Orders.Fields.CreatedTime")",
+                                            title: "@T("Xrms.Admin.InStoreOrders.Fields.CreatedTime")",
                                             width: 150
                                         }, {
                                             field: "UpdatedOnUtc",
-                                            title: "@T("Xrms.Admin.Cashier.Orders.Fields.UpdatedTime")",
+                                            title: "@T("Xrms.Admin.InStoreOrders.Fields.UpdatedTime")",
                                             width: 150
                                         }, {
                                             field: "BilledOnUtc",
-                                            title: "@T("Xrms.Admin.Cashier.Orders.Fields.BilledTime")",
+                                            title: "@T("Xrms.Admin.InStoreOrders.Fields.BilledTime")",
                                             width: 150
                                         }, {
                                             field: "AggregateId",
@@ -125,40 +101,12 @@
                                 });
                             });
                     </script>
-
-                    <script type="text/javascript">
-                            $(document).ready(function() {
-                                //search button
-                                $('#search-orders').click(function() {
-                                    //search
-                                    var grid = $('#orders-grid').data('kendoGrid');
-                                    grid.dataSource.page(1); //new search. Set page size to 1
-                                    //grid.dataSource.read(); we already loaded the grid above using "page" function
-                                    return false;
-                                });
-
-                                $("#@Html.IdFor(model => model.SearchModel.SearchTableName)").keydown(function(event) {
-                                    if (event.keyCode == 13) {
-                                        $("#search-orders").click();
-                                        return false;
-                                    }
-                                });
-                            });
-
-                            function additionalData() {
-                                var data = {
-                                    SearchTableName: $('#@Html.IdFor(model => model.SearchModel.SearchTableName)').val()
-                                };
-                                addAntiForgeryToken(data);
-                                return data;
-                            }
-                    </script>
                 </div>
             </div>
             <div class="row">
                 <div class="col-6">&nbsp;</div>
                 <div class="col-6">
-                    <ul id="messagesList"></ul>
+                    <ul id="eventMessagesList"></ul>
                 </div>
             </div>
         </div>
@@ -173,24 +121,17 @@
 
     connection.on("CreatedOrderEvent", (message) => {
         //const encodedMsg = JSON.stringify(message);
-        const encodedMsg = message.updatedOnUtc + ": Order [" + message.orderCode + "] has been created on table [" + message.tableName + "]";
+        const encodedMsg = message.updatedOnUtc + ": Order [" + message.orderCode + "] has been created on table [" + message.tableName + "] with " + message.addedOrderItems.length + " order items.";
         const li = document.createElement("li");
         li.textContent = encodedMsg;
-        document.getElementById("messagesList").appendChild(li);
-        /*public Guid AggregateId { get; set; }
-        public int Version { get; set; }
-        public int Id { get; set; }
-        public int OrderId { get; set; }
-        public int TableId { get; set; }
-        public string TableName { get; set; }
-        public string OrderCode { get; set; }
-        public int State { get; set; }
-        public int PrintCount { get; set; }
-        public string BilledOnUtc { get; set; }
-        public string CheckedOutOnUtc { get; set; }
-        public string CreatedOnUtc { get; set; }
-        public string UpdatedOnUtc { get; set; }
-        public decimal SubTotalPrice { get; set; }*/
+        for (i = 0; i < message.addedOrderItems.length; i++) {
+            var item = message.addedOrderItems[i];
+            var childList = document.createElement("li");
+            childList.textContent = item.productName + ": " + item.quantity;
+            li.appendChild(childList);
+        }
+        document.getElementById("eventMessagesList").appendChild(li);
+
         var orderViewModel = {};
         orderViewModel.AggregateId = message.aggregateId;
         orderViewModel.OrderCode = message.orderCode;
@@ -202,10 +143,6 @@
 
         var grid = $('#orders-grid').data('kendoGrid');
         grid.dataSource.add(orderViewModel);
-
-        // reload order list
-        //var grid = $('#orders-grid').data('kendoGrid');
-        //grid.dataSource.page(1);
     });
 
     connection.on("AddedOrderItemEvent", (message) => {
@@ -213,7 +150,7 @@
         const encodedMsg = message.updatedOnUtc + ": [" + message.changedOrderItem.quantity + "] [" + message.changedOrderItem.productName + "] has been added in order [" + message.orderCode + "]";
         const li = document.createElement("li");
         li.textContent = encodedMsg;
-        document.getElementById("messagesList").appendChild(li);
+        document.getElementById("eventMessagesList").appendChild(li);
 
         // update order
         let orderId = message.aggregateId;
@@ -238,7 +175,7 @@
         const encodedMsg = message.updatedOnUtc + ": [" + message.changedOrderItem.productName + "] has been changed quantity [" + message.changedOrderItem.quantity + "] in order [" + message.orderCode + "]";
         const li = document.createElement("li");
         li.textContent = encodedMsg;
-        document.getElementById("messagesList").appendChild(li);
+        document.getElementById("eventMessagesList").appendChild(li);
 
         let orderId = message.aggregateId;
         let orderVersion = message.version;

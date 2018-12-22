@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Security;
+using Nop.Plugin.Xrms.Domain;
 using Nop.Services.Security;
 
 namespace Nop.Plugin.Xrms.Services
@@ -12,11 +13,13 @@ namespace Nop.Plugin.Xrms.Services
     public partial class XrmsPermissionProvider : IPermissionProvider
     {
         //admin area permissions
-        public static readonly PermissionRecord ManageSuppliers = new PermissionRecord { Name = "Admin area. XRMS Manage Suppliers", SystemName = "XrmsManageSuppliers", Category = "Catalog" };
-        public static readonly PermissionRecord ManageMaterials = new PermissionRecord { Name = "Admin area. XRMS Manage Materials", SystemName = "XrmsManageMaterials", Category = "Catalog" };
-        public static readonly PermissionRecord ManageMaterialGroups = new PermissionRecord { Name = "Admin area. XRMS Manage Material Groups", SystemName = "XrmsManageMaterialGroups", Category = "Catalog" };
-        public static readonly PermissionRecord ManageTables = new PermissionRecord { Name = "Admin area. XRMS Manage Tables", SystemName = "XrmsManageTables", Category = "Catalog" };
-        public static readonly PermissionRecord ManageCashierOrders = new PermissionRecord { Name = "Admin area. XRMS Manage CashierOrders", SystemName = "XrmsManageCashierOrder", Category = "Standard" };
+        public static readonly PermissionRecord ManageSuppliers = new PermissionRecord { Name = "Admin area. XRMS Manage Suppliers", SystemName = "XrmsManageSuppliers", Category = "XRMS" };
+        public static readonly PermissionRecord ManageMaterials = new PermissionRecord { Name = "Admin area. XRMS Manage Materials", SystemName = "XrmsManageMaterials", Category = "XRMS" };
+        public static readonly PermissionRecord ManageMaterialGroups = new PermissionRecord { Name = "Admin area. XRMS Manage Material Groups", SystemName = "XrmsManageMaterialGroups", Category = "XRMS" };
+        public static readonly PermissionRecord ManageTables = new PermissionRecord { Name = "Admin area. XRMS Manage Tables", SystemName = "XrmsManageTables", Category = "XRMS" };
+        public static readonly PermissionRecord ManageCashierOrders = new PermissionRecord { Name = "Admin area. XRMS screen for Cashiers", SystemName = "XrmsManageCashierOrders", Category = "XRMS" };
+        public static readonly PermissionRecord ManageWaiterOrders = new PermissionRecord { Name = "Admin area. XRMS screen for Waiters", SystemName = "XrmsManageWaiterOrders", Category = "XRMS" };
+        public static readonly PermissionRecord ManageKitchenOrders = new PermissionRecord { Name = "Admin area. XRMS screen for Kitchen", SystemName = "XrmsManageKitchenOrders", Category = "XRMS" };
 
         /// <summary>
         /// Get permissions
@@ -30,7 +33,9 @@ namespace Nop.Plugin.Xrms.Services
                 ManageMaterials,
                 ManageMaterialGroups,
                 ManageTables,
-                ManageCashierOrders
+                ManageCashierOrders,
+                ManageWaiterOrders,
+                ManageKitchenOrders
             };
         }
 
@@ -40,6 +45,7 @@ namespace Nop.Plugin.Xrms.Services
         /// <returns>Default Permissions</returns>
         public virtual IEnumerable<DefaultPermissionRecord> GetDefaultPermissions()
         {
+            //var accessAdminPanelPermission = StandardPermissionProvider.AccessAdminPanel;
             return new[]
             {
                 new DefaultPermissionRecord
@@ -51,7 +57,37 @@ namespace Nop.Plugin.Xrms.Services
                         ManageMaterials,
                         ManageMaterialGroups,
                         ManageTables,
-                        ManageCashierOrders
+                        ManageCashierOrders,
+                        ManageWaiterOrders,
+                        ManageKitchenOrders
+                    }
+                },
+                new DefaultPermissionRecord
+                {
+                    CustomerRoleSystemName = XrmsCustomerDefaults.CashiersRoleName,
+                    PermissionRecords = new[]
+                    {
+                        //accessAdminPanelPermission,
+                        ManageCashierOrders,
+                        ManageWaiterOrders
+                    }
+                },
+                new DefaultPermissionRecord
+                {
+                    CustomerRoleSystemName = XrmsCustomerDefaults.WaitersRoleName,
+                    PermissionRecords = new[]
+                    {
+                        //accessAdminPanelPermission,
+                        ManageWaiterOrders
+                    }
+                },
+                new DefaultPermissionRecord
+                {
+                    CustomerRoleSystemName = XrmsCustomerDefaults.KitchenRoleName,
+                    PermissionRecords = new[]
+                    {
+                        //accessAdminPanelPermission,
+                        ManageKitchenOrders
                     }
                 }
             };
