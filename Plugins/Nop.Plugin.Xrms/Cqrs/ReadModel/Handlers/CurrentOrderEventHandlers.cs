@@ -22,6 +22,9 @@ using Nop.Plugin.Xrms.Areas.Admin.Models.CashierOrders;
 using Nop.Plugin.Xrms.Areas.Admin.Models;
 using Nop.Services.Catalog;
 using Nop.Plugin.Xrms.Areas.Admin.Models.InStoreOrders;
+using Nop.Services.Customers;
+using Nop.Core.Domain.Customers;
+//using Nop.Plugin.Xrms.Services;
 
 namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
 {
@@ -33,7 +36,9 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
         private readonly IStoreContext _storeContext;
         private readonly IWorkContext _workContext;
         private readonly IWebHelper _webHelper;
+        private readonly ICustomerService _customerService;
         private readonly ICustomNumberFormatter _customNumberFormatter;
+        private readonly IShoppingCartService _shoppingCartService;
         private readonly IOrderService _orderService;
         private readonly IProductService _productService;
 
@@ -46,7 +51,9 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
         public CurrentOrderEventHandlers(IStoreContext storeContext,
             IWorkContext workContext,
             IWebHelper webHelper,
+            ICustomerService customerService,
             ICustomNumberFormatter customNumberFormatter,
+            IShoppingCartService shoppingCartService,
             IOrderService orderService,
             IProductService productService,
             ICurrentOrderService currentOrderService,
@@ -58,6 +65,8 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
             _customNumberFormatter = customNumberFormatter;
             _storeContext = storeContext;
             _workContext = workContext;
+            _customerService = customerService;
+            _shoppingCartService = shoppingCartService;
             _webHelper = webHelper;
             _orderService = orderService;
             _productService = productService;
@@ -72,21 +81,22 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
         /// Initialize an order, save and add order notes
         /// </summary>
         /// <returns></returns>
-        protected virtual Order InitializeOrder(CreatedEvent message)
+        protected virtual Order InitializeOrder(CreatedEvent message, Customer customer)
         {
             if (message == null)
             {
                 throw new ArgumentNullException();
             }
 
-            var currentCustomer = _workContext.CurrentCustomer;
+            var waiter = _workContext.CurrentCustomer;
             var currentStore = _storeContext.CurrentStore;
-            _logger.InsertLog(Core.Domain.Logging.LogLevel.Information, "Current Context", String.Format("Store = {0}, Customer = {1}", currentStore.Id, currentCustomer.Username));
+
+            _logger.InsertLog(Core.Domain.Logging.LogLevel.Information, "Initalize order", String.Format("Store = {0}, Waiter = {1}", currentStore.Id, waiter.Username));
             var order = new Order
             {
                 StoreId = currentStore.Id,
                 OrderGuid = message.Id,
-                CustomerId = currentCustomer.Id,
+                CustomerId = customer.Id,
                 CustomerLanguageId = _workContext.WorkingLanguage.Id,
                 CustomerTaxDisplayType = Core.Domain.Tax.TaxDisplayType.ExcludingTax,
                 //CustomerTaxDisplayType = details.CustomerTaxDisplayType,
@@ -178,9 +188,12 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
                 throw new ArgumentNullException();
             }
 
+            var customer = _customerService.InsertGuestCustomer();
+            var currentStore = _storeContext.CurrentStore;
+
             try
             {
-                var order = InitializeOrder(message);
+                var order = InitializeOrder(message, customer);
                 var currentOrder = new CurrentOrderEntity()
                 {
                     OrderId = order.Id,
@@ -190,11 +203,12 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
                     TableId = message.TableId,
                     WaiterId = order.CustomerId,
                     State = CurrentOrderState.New,
+                    CustomerId = order.CustomerId,
                     CreatedOnUtc = message.TimeStamp.UtcDateTime,
                     UpdatedOnUtc = message.TimeStamp.UtcDateTime
                 };
 
-                foreach (var item in message.OrderItems)
+                /*foreach (var item in message.OrderItems)
                 {
                     currentOrder.CurrentOrderItems.Add(new CurrentOrderItemEntity()
                     {
@@ -204,6 +218,23 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
                         CreatedOnUtc = message.TimeStamp.UtcDateTime,
                         UpdatedOnUtc = message.TimeStamp.UtcDateTime
                     });
+                }*/
+
+                foreach (var item in message.OrderItems)
+                {
+                    var shoppingCartItem = _shoppingCartService.AddShoppingCartItem(_customerService, customer, item.ProductId, ShoppingCartType.ShoppingCart, currentStore.Id, item.Quantity);
+                    if (shoppingCartItem != null)
+                    {
+                        currentOrder.CurrentOrderItems.Add(new CurrentOrderItemEntity()
+                        {
+                            ShoppingCartItemId = shoppingCartItem.Id,
+                            AggregateId = item.Guid,
+                            ProductId = item.ProductId,
+                            Quantity = item.Quantity,
+                            CreatedOnUtc = message.TimeStamp.UtcDateTime,
+                            UpdatedOnUtc = message.TimeStamp.UtcDateTime
+                        });
+                    }
                 }
                 _currentOrderService.InsertOrder(currentOrder);
 
@@ -246,12 +277,34 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
 
         public async Task Handle(AddedOrderItemEvent message, CancellationToken token)
         {
+            // get current order
             var order = _currentOrderService.GetOrderByGuid(message.Id);
+
+            // get customer from current order
+            var currentStore = _storeContext.CurrentStore;
+            var customer = _customerService.GetCustomerById(order.CustomerId);
+            // add shopping cart first, then add current order item
+            var shoppingCartItem = _shoppingCartService.AddShoppingCartItem(_customerService, customer, message.ProductId, ShoppingCartType.ShoppingCart, currentStore.Id, message.Quantity);
+            /*if (shoppingCartItem != null)
+            {
+                order.CurrentOrderItems.Add(new CurrentOrderItemEntity()
+                {
+                    ShoppingCartItemId = shoppingCartItem.Id,
+                    AggregateId = message.OrderItemGuid,
+                    CurrentOrderId = order.Id,
+                    ProductId = message.ProductId,
+                    Quantity = message.Quantity,
+                    CreatedOnUtc = message.TimeStamp.UtcDateTime,
+                    UpdatedOnUtc = message.TimeStamp.UtcDateTime
+                });
+            }*/
+            // update current order information
             order.Version = message.Version;
             order.UpdatedOnUtc = message.TimeStamp.UtcDateTime;
             _currentOrderService.UpdateOrder(order);
             var item = new CurrentOrderItemEntity()
             {
+                ShoppingCartItemId = (shoppingCartItem != null) ? shoppingCartItem.Id : 0,
                 AggregateId = message.OrderItemGuid,
                 CurrentOrderId = order.Id,
                 ProductId = message.ProductId,
@@ -285,17 +338,30 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
 
         public async Task Handle(ChangedOrderItemQuantityEvent message, CancellationToken token)
         {
+            // get current order
             var order = _currentOrderService.GetOrderByGuid(message.Id);
             order.Version = message.Version;
             order.UpdatedOnUtc = message.TimeStamp.UtcDateTime;
             _currentOrderService.UpdateOrder(order);
             var item = _currentOrderService.GetOrderItemByGuid(message.OrderItemGuid);
-            item.Quantity = message.Quantity;
-            item.UpdatedOnUtc = message.TimeStamp.UtcDateTime;
-            _currentOrderService.UpdateOrderItem(item);
+
+            // get customer form current order
+            var customer = _customerService.GetCustomerById(order.CustomerId);
+            _shoppingCartService.UpdateShoppingCartItem(_customerService, customer, item.ShoppingCartItemId, quantity: message.Quantity);
+            if (message.Quantity > 0)
+            {
+                item.Quantity = message.Quantity;
+                item.UpdatedOnUtc = message.TimeStamp.UtcDateTime;
+                _currentOrderService.UpdateOrderItem(item);
+            }
+            else
+            {
+                _currentOrderService.DeleteOrderItem(item);
+            }
 
             // fill in model values from the entity
-            var notifyModel = order.ToNotifyChangedOrderItemModel(); var product = _productService.GetProductById(item.ProductId);
+            var notifyModel = order.ToNotifyChangedOrderItemModel();
+            var product = _productService.GetProductById(item.ProductId);
             var orderItemModel = new InStoreOrderItemListRowViewModel()
             {
                 Id = item.Id,
@@ -328,7 +394,8 @@ namespace Nop.Plugin.Xrms.Cqrs.ReadModel.Events.Handlers
             _currentOrderService.UpdateOrderItem(item);
 
             // fill in model values from the entity
-            var notifyModel = order.ToNotifyChangedOrderItemModel(); var product = _productService.GetProductById(item.ProductId);
+            var notifyModel = order.ToNotifyChangedOrderItemModel();
+            var product = _productService.GetProductById(item.ProductId);
             var orderItemModel = new InStoreOrderItemListRowViewModel()
             {
                 Id = item.Id,

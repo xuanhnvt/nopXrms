@@ -2,6 +2,7 @@
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Localization;
+using Nop.Core.Domain.Orders;
 
 namespace Nop.Plugin.Xrms.Domain
 {
@@ -44,6 +45,11 @@ namespace Nop.Plugin.Xrms.Domain
         public int OrderId { get; set; }
 
         /// <summary>
+        /// Gets or sets the shopping cart item identifier
+        /// </summary>
+        public int ShoppingCartItemId { get; set; }
+
+        /// <summary>
         /// Gets or sets the product identifier
         /// </summary>
         public int ProductId { get; set; }
@@ -56,32 +62,32 @@ namespace Nop.Plugin.Xrms.Domain
         /// <summary>
         /// Gets or sets the unit price in primary store currency (include tax)
         /// </summary>
-        public decimal UnitPriceInclTax { get; set; }
+        //public decimal UnitPriceInclTax { get; set; }
 
         /// <summary>
         /// Gets or sets the unit price in primary store currency (exclude tax)
         /// </summary>
-        public decimal UnitPriceExclTax { get; set; }
+        //public decimal UnitPriceExclTax { get; set; }
 
         /// <summary>
         /// Gets or sets the price in primary store currency (include tax)
         /// </summary>
-        public decimal PriceInclTax { get; set; }
+        //public decimal PriceInclTax { get; set; }
 
         /// <summary>
         /// Gets or sets the price in primary store currency (exclude tax)
         /// </summary>
-        public decimal PriceExclTax { get; set; }
+        //public decimal PriceExclTax { get; set; }
 
         /// <summary>
         /// Gets or sets the discount amount (include tax)
         /// </summary>
-        public decimal DiscountAmountInclTax { get; set; }
+        //public decimal DiscountAmountInclTax { get; set; }
 
         /// <summary>
         /// Gets or sets the discount amount (exclude tax)
         /// </summary>
-        public decimal DiscountAmountExclTax { get; set; }
+        //public decimal DiscountAmountExclTax { get; set; }
 
         /// <summary>
         /// Gets or sets the date start processing product
@@ -141,5 +147,10 @@ namespace Nop.Plugin.Xrms.Domain
             get => (CurrentOrderItemState)StateId;
             set => StateId = (int)value;
         }
+
+        /// <summary>
+        /// Gets or sets the shopping cart item
+        /// </summary>
+        public virtual ShoppingCartItem ShoppingCartItem { get; set; }
     }
 }

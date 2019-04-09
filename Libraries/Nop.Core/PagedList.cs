@@ -70,7 +70,9 @@ namespace Nop.Core
 
             this.PageSize = pageSize;
             this.PageIndex = pageIndex;
-            this.AddRange(source);
+            //this.AddRange(source);
+
+            this.AddRange(source.Skip(pageIndex * pageSize).Take(pageSize).ToList());
         }
 
         /// <summary>
